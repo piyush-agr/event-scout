@@ -74,7 +74,7 @@ export function renderDigestEmail(sub: Subscriber, digest: Digest, baseUrl: stri
   }
   ${events.map((e, i) => eventBlock(e, i + 1)).join("")}
   <tr><td style="padding-top:16px;font-size:12px;color:#6b7280;line-height:1.5;">
-    Found by live Google Search across ${Object.keys(digest.stats.by_domain).length} websites. Every link above was returned by that search. Always confirm dates on the event page before you register.<br><br>
+    Collected today from ${Object.keys(digest.stats.by_domain).length} websites and ranked by Gemini. Every link above is the page the event was found on. Always confirm dates on the event page before you register.<br><br>
     <a href="${baseUrl}/digest/${digest.id}" style="color:#1d4ed8;">View in browser</a> ·
     <a href="${baseUrl}/manage/${sub.token}" style="color:#1d4ed8;">Change your cities and focus areas</a>
   </td></tr>

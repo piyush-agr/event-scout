@@ -36,15 +36,18 @@ export type ScoutEvent = {
 export type RunStats = {
   model: string;
   window: { from: string; to: string };
-  searches: { cities: string[]; ok: boolean; sources: number; error?: string }[];
-  sources_returned: number;
-  extracted: number;
+  sources: { source: string; city: string; ok: boolean; found: number; error?: string }[];
+  candidates_fetched: number; // everything the live sources returned
+  listed_in_window: number; // listed events inside the 30-day window, after merging duplicates
+  search_results: number; // web-search snippets collected
+  sent_to_ai: number;
   dropped_invalid: number;
   dropped_no_source: number;
   dropped_out_of_window: number;
   dropped_wrong_city: number;
   dropped_online: number;
   dropped_closed: number;
+  dropped_low_relevance: number;
   duplicates_merged: number;
   final: number;
   flagged: number;

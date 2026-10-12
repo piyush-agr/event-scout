@@ -77,19 +77,22 @@ export default function DigestView({ digest, showRunDetails = true }: { digest: 
           <table>
             <tbody>
               <tr><td>AI model</td><td>{stats.model}</td></tr>
-              <tr><td>Live searches</td><td>{stats.searches.map((s) => `${s.cities.join(" + ")}: ${s.ok ? `${s.sources} pages` : `failed (${s.error})`}`).join(" | ")}</td></tr>
-              <tr><td>Web pages returned by Google Search</td><td>{stats.sources_returned}</td></tr>
-              <tr><td>Events extracted by Gemini</td><td>{stats.extracted}</td></tr>
-              <tr><td>Dropped: malformed</td><td>{stats.dropped_invalid}</td></tr>
-              <tr><td>Dropped: no real source URL</td><td>{stats.dropped_no_source}</td></tr>
+              <tr><td>Live sources fetched</td><td>{(stats.sources ?? []).map((r) => `${r.source} / ${r.city}: ${r.ok ? r.found : `failed (${r.error})`}`).join(" · ") || "—"}</td></tr>
+              <tr><td>Items collected from all sources</td><td>{stats.candidates_fetched ?? 0}</td></tr>
+              <tr><td>Listed events inside the 30-day window</td><td>{stats.listed_in_window ?? 0}</td></tr>
+              <tr><td>Web-search results collected</td><td>{stats.search_results ?? 0}</td></tr>
+              <tr><td>Sent to Gemini for scoring</td><td>{stats.sent_to_ai ?? 0}</td></tr>
               <tr><td>Dropped: outside 30-day window</td><td>{stats.dropped_out_of_window}</td></tr>
+              <tr><td>Dropped: malformed AI record</td><td>{stats.dropped_invalid}</td></tr>
+              <tr><td>Dropped: not tied to a fetched page</td><td>{stats.dropped_no_source}</td></tr>
               <tr><td>Dropped: not in chosen cities</td><td>{stats.dropped_wrong_city}</td></tr>
               <tr><td>Dropped: online only</td><td>{stats.dropped_online}</td></tr>
               <tr><td>Dropped: registration already closed</td><td>{stats.dropped_closed}</td></tr>
+              <tr><td>Dropped: not relevant enough (score under 40)</td><td>{stats.dropped_low_relevance ?? 0}</td></tr>
               <tr><td>Duplicates merged</td><td>{stats.duplicates_merged}</td></tr>
               <tr><td>Events in digest</td><td>{stats.final} ({stats.flagged} flagged)</td></tr>
-              <tr><td>Events per source site</td><td>{Object.entries(stats.by_domain).map(([d, n]) => `${d} (${n})`).join(", ") || "—"}</td></tr>
-              <tr><td>Run time</td><td>{(stats.duration_ms / 1000).toFixed(1)}s</td></tr>
+              <tr><td>Events per source site</td><td>{Object.entries(stats.by_domain ?? {}).map(([d, n]) => `${d} (${n})`).join(", ") || "—"}</td></tr>
+              <tr><td>Run time</td><td>{((stats.duration_ms ?? 0) / 1000).toFixed(1)}s</td></tr>
             </tbody>
           </table>
         </details>

@@ -22,8 +22,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </header>
         <main>{children}</main>
         <footer className="site-footer">
-          Events come from live Google Search via Gemini Flash. Every link was returned by that search; nothing is
-          hardcoded.
+          Events are collected live from Eventbrite, AllEvents, Meetup, Luma and web search, then ranked by Gemini Flash.
+          Every link is the page the event was found on; nothing is hardcoded.
         </footer>
       </body>
     </html>

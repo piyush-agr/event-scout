@@ -21,8 +21,8 @@ export default async function Home() {
     <>
       <h1>Never miss the right room again</h1>
       <p className="lede">
-        Every Monday at 7:00 AM IST, Event Scout searches the live web for conferences, CXO summits, roundtables and
-        startup meetups in the next 30 days, keeps the ones in your cities, ranks them by how well they match your focus
+        Every Monday at 7:00 AM IST, Event Scout collects conferences, CXO summits, roundtables and
+        startup meetups in the next 30 days from many live sources, keeps the ones in your cities, ranks them by how well they match your focus
         areas, and emails you a five-minute digest. Events whose registration closes within 7 days are flagged in red.
       </p>
 
@@ -90,10 +90,11 @@ export default async function Home() {
       <h2>How it works</h2>
       <ol className="steps">
         <li>Vercel Cron (Mondays 01:30 UTC = 7:00 AM IST) or the “Send my digest now” button starts a run.</li>
-        <li>Gemini Flash with Google Search finds events across Eventbrite, conference sites, industry bodies, meetup platforms and public LinkedIn posts.</li>
-        <li>Gemini Flash turns the findings into structured records and scores each against your focus areas.</li>
-        <li>Code validates every record, drops any event without a real source URL from the search, filters by date and city, merges duplicates, ranks, and flags deadlines.</li>
-        <li>The digest is stored and emailed, and shown on this page.</li>
+        <li>The app fetches live event listings for each chosen city from Eventbrite, AllEvents, Meetup and Luma, plus web search results that cover conference sites, industry bodies and public LinkedIn posts.</li>
+        <li>Code keeps events inside the next 30 days and merges the same event found on several sites.</li>
+        <li>Gemini Flash judges each event, scores it 0–100 against your focus areas with a reason, writes the summary, and pulls dated events out of search snippets.</li>
+        <li>Code validates every AI record, drops anything not tied to a fetched page, removes online-only and low-relevance events, ranks, and flags deadlines under 7 days.</li>
+        <li>The digest is stored, emailed, and shown on this page.</li>
       </ol>
     </>
   );

@@ -1,16 +1,10 @@
-import { DEADLINE_FLAG_DAYS, GEMINI_MODEL, WINDOW_DAYS } from "./config";
+import { DEADLINE_FLAG_DAYS, GEMINI_MODEL, MAX_AI_LISTED, MAX_AI_SEARCH, MAX_EVENTS, MIN_SCORE, WINDOW_DAYS } from "./config";
 import { addDays, daysBetween, isIsoDate, todayIST } from "./dates";
 import { db } from "./db";
 import { sendDigestEmail } from "./email";
-import { ExtractedEventSchema, extractAndScore, searchEvents, type SearchResult, type Source } from "./gemini";
+import { assessEvents, ListedAssessmentSchema, SearchEventSchema } from "./gemini";
+import { fetchCandidates, type Candidate } from "./sources";
 import type { Digest, RunStats, ScoutEvent, Subscriber } from "./types";
-
-function chunk<T>(items: T[], groups: number): T[][] {
-  const size = Math.ceil(items.length / groups);
-  const out: T[][] = [];
-  for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size));
-  return out;
-}
 
 /** Same event listed on two sites usually differs only in punctuation, year and filler words. */
 function dedupeKey(title: string, startDate: string): string {
@@ -19,8 +13,17 @@ function dedupeKey(title: string, startDate: string): string {
     .replace(/\b20\d{2}\b/g, "")
     .replace(/[^a-z0-9 ]/g, " ")
     .split(/\s+/)
-    .filter((w) => w && !["the", "a", "an", "of", "and", "for", "in", "edition", "india", "annual"].includes(w));
+    .filter((w) => w && !["the", "a", "an", "of", "and", "for", "in", "edition", "india", "annual", "tickets"].includes(w));
   return `${words.slice(0, 5).join(" ")}|${startDate}`;
+}
+
+/** Take items from each group in turn, so no single site or city crowds out the others. */
+function roundRobin<T>(groups: T[][], limit: number): T[] {
+  const out: T[] = [];
+  for (let i = 0; out.length < limit && groups.some((g) => i < g.length); i++) {
+    for (const g of groups) if (i < g.length && out.length < limit) out.push(g[i]);
+  }
+  return out;
 }
 
 function emptyStats(): RunStats {
@@ -28,15 +31,18 @@ function emptyStats(): RunStats {
   return {
     model: GEMINI_MODEL,
     window: { from, to: addDays(from, WINDOW_DAYS) },
-    searches: [],
-    sources_returned: 0,
-    extracted: 0,
+    sources: [],
+    candidates_fetched: 0,
+    listed_in_window: 0,
+    search_results: 0,
+    sent_to_ai: 0,
     dropped_invalid: 0,
     dropped_no_source: 0,
     dropped_out_of_window: 0,
     dropped_wrong_city: 0,
     dropped_online: 0,
     dropped_closed: 0,
+    dropped_low_relevance: 0,
     duplicates_merged: 0,
     final: 0,
     flagged: 0,
@@ -45,6 +51,8 @@ function emptyStats(): RunStats {
   };
 }
 
+type Group = { primary: Candidate; others: Candidate[] };
+
 export async function collectEvents(sub: Pick<Subscriber, "categories" | "cities">): Promise<{
   events: ScoutEvent[];
   stats: RunStats;
@@ -52,73 +60,142 @@ export async function collectEvents(sub: Pick<Subscriber, "categories" | "cities
   const started = Date.now();
   const stats = emptyStats();
   const { from, to } = stats.window;
+  const inWindow = (start: string, end: string | null) => daysBetween(from, end ?? start) >= 0 && daysBetween(start, to) >= 0;
 
-  // 1. SEARCH — at most 3 grounded searches per run (keeps us inside the free Gemini quota).
-  const cityGroups = chunk(sub.cities, Math.min(3, sub.cities.length));
-  const results: SearchResult[] = [];
-  const settled = await Promise.allSettled(
-    cityGroups.map((cities, i) =>
-      searchEvents({ cities, categories: sub.categories, from, to, sourceIdOffset: i * 1000 }),
-    ),
-  );
-  settled.forEach((r, i) => {
-    if (r.status === "fulfilled") {
-      results.push(r.value);
-      stats.searches.push({ cities: cityGroups[i], ok: true, sources: r.value.sources.length });
-    } else {
-      // One failed search must not break the run.
-      const error = r.reason instanceof Error ? r.reason.message : String(r.reason);
-      stats.searches.push({ cities: cityGroups[i], ok: false, sources: 0, error: error.slice(0, 300) });
+  // 1. AGGREGATE — fetch live listing pages and web search for every chosen city.
+  const monthLabel = new Date(`${from}T00:00:00Z`).toLocaleDateString("en-IN", { month: "long", year: "numeric", timeZone: "UTC" });
+  const { candidates, reports } = await fetchCandidates(sub.cities, sub.categories, monthLabel);
+  stats.sources = reports;
+  stats.candidates_fetched = candidates.length;
+  if (candidates.length === 0) {
+    stats.error = "No live source returned any data: " + reports.map((r) => `${r.source} ${r.city}: ${r.error ?? "0 results"}`).slice(0, 4).join("; ");
+    stats.duration_ms = Date.now() - started;
+    return { events: [], stats };
+  }
+
+  // 2. FILTER BY DATE + MERGE DUPLICATES (code) — before spending any AI quota.
+  const groups = new Map<string, Group>();
+  for (const c of candidates) {
+    if (c.kind !== "listing" || !c.start_date) continue;
+    if (!inWindow(c.start_date, c.end_date)) {
+      stats.dropped_out_of_window++;
+      continue;
     }
-  });
-
-  const sources: Source[] = results.flatMap((r) => r.sources);
-  stats.sources_returned = sources.length;
-  if (results.length === 0) {
-    stats.error = "All searches failed: " + (stats.searches[0]?.error ?? "unknown error");
-    stats.duration_ms = Date.now() - started;
-    return { events: [], stats };
+    const key = dedupeKey(c.title, c.start_date);
+    const group = groups.get(key);
+    if (group) {
+      stats.duplicates_merged++;
+      if (c.url !== group.primary.url) group.others.push(c);
+    } else {
+      groups.set(key, { primary: c, others: [] });
+    }
   }
-  if (sources.length === 0) {
-    stats.error = "Google Search returned no source pages, so no event could be verified.";
-    stats.duration_ms = Date.now() - started;
-    return { events: [], stats };
-  }
+  stats.listed_in_window = groups.size;
 
-  // 2. NORMALISE + SCORE (Gemini), then everything below is plain code.
-  const raw = await extractAndScore({
-    findings: results.map((r) => r.text).join("\n\n---\n\n"),
-    sources,
+  const bySourceCity = new Map<string, Group[]>();
+  for (const g of groups.values()) {
+    const key = `${g.primary.source}|${g.primary.city}`;
+    bySourceCity.set(key, [...(bySourceCity.get(key) ?? []), g]);
+  }
+  const listed = roundRobin([...bySourceCity.values()], MAX_AI_LISTED);
+
+  const seenUrls = new Set<string>();
+  const searchResults = candidates
+    .filter((c) => c.kind === "search" && !seenUrls.has(c.url) && seenUrls.add(c.url))
+    .slice(0, MAX_AI_SEARCH);
+  stats.search_results = searchResults.length;
+  stats.sent_to_ai = listed.length + searchResults.length;
+
+  // 3. UNDERSTAND + SCORE (Gemini Flash).
+  const ai = await assessEvents({
+    listed: listed.map((g) => g.primary),
+    searchResults,
     cities: sub.cities,
     categories: sub.categories,
     from,
     to,
   });
-  stats.extracted = raw.length;
+  stats.model = ai.model;
 
-  const sourceById = new Map(sources.map((s) => [s.id, s]));
+  const events = new Map<string, ScoutEvent>();
   const cityByLower = new Map(sub.cities.map((c) => [c.toLowerCase(), c]));
-  const merged = new Map<string, ScoutEvent>();
 
-  for (const item of raw) {
-    // 3. VALIDATE — discard malformed records.
-    const parsed = ExtractedEventSchema.safeParse(item);
+  /** Deadline flag, computed in code in IST. Returns null if registration has already closed. */
+  const withDeadline = (start: string, deadline: string | null) => {
+    if (deadline) {
+      const days_left = daysBetween(from, deadline);
+      if (days_left < 0) return null;
+      return { deadline, days_left, deadline_status: (days_left < DEADLINE_FLAG_DAYS ? "urgent" : "ok") as ScoutEvent["deadline_status"] };
+    }
+    // No published deadline: the event date is the last possible moment to register.
+    const days_left = Math.max(0, daysBetween(from, start));
+    return { deadline: null, days_left, deadline_status: (days_left < DEADLINE_FLAG_DAYS ? "event_soon" : "unknown") as ScoutEvent["deadline_status"] };
+  };
+
+  // 4a. Listed events: facts come from the listing page, judgement comes from Gemini.
+  const groupById = new Map(listed.map((g) => [g.primary.id, g]));
+  for (const item of ai.listed) {
+    const parsed = ListedAssessmentSchema.safeParse(item);
+    const group = parsed.success ? groupById.get(parsed.data.id) : undefined;
+    if (!parsed.success || !group) {
+      stats.dropped_invalid++;
+      continue;
+    }
+    const a = parsed.data;
+    const c = group.primary;
+    groupById.delete(c.id); // ignore a repeated id
+    const format = c.format !== "unknown" ? c.format : a.format;
+    if (format === "online") {
+      stats.dropped_online++;
+      continue;
+    }
+    if (!a.is_professional_event || a.relevance_score < MIN_SCORE) {
+      stats.dropped_low_relevance++;
+      continue;
+    }
+    const aiDeadline = isIsoDate(a.registration_deadline) && a.registration_deadline <= c.start_date! ? a.registration_deadline : null;
+    const d = withDeadline(c.start_date!, c.deadline ?? aiDeadline);
+    if (!d) {
+      stats.dropped_closed++;
+      continue;
+    }
+    events.set(dedupeKey(c.title, c.start_date!), {
+      title: c.title,
+      start_date: c.start_date!,
+      end_date: c.end_date && c.end_date !== c.start_date ? c.end_date : null,
+      city: c.city,
+      venue: c.venue,
+      format,
+      organizer: c.organizer,
+      audience: a.audience?.trim() || null,
+      summary: a.summary.trim(),
+      price: c.price,
+      category: a.category,
+      score: Math.round(a.relevance_score),
+      reason: a.relevance_reason.trim(),
+      ...d,
+      url: c.url,
+      source_domain: c.source,
+      other_sources: group.others.map((o) => ({ url: o.url, domain: o.source })),
+    });
+  }
+
+  // 4b. Events Gemini recognised inside web-search snippets: validated harder, because the text was unstructured.
+  const searchById = new Map(searchResults.map((c) => [c.id, c]));
+  for (const item of ai.fromSearch) {
+    const parsed = SearchEventSchema.safeParse(item);
     if (!parsed.success || !isIsoDate(parsed.data.start_date)) {
       stats.dropped_invalid++;
       continue;
     }
     const e = parsed.data;
-
-    // 4. PROVENANCE — keep only events tied to a page Google Search actually returned.
-    const eventSources = [...new Set(e.source_ids)].map((id) => sourceById.get(id)).filter((s): s is Source => !!s);
-    if (eventSources.length === 0) {
-      stats.dropped_no_source++;
+    const src = searchById.get(e.id);
+    if (!src) {
+      stats.dropped_no_source++; // not tied to a page we actually fetched
       continue;
     }
-
-    // 5. FILTER — 30-day window, target cities, in-person.
-    const endDate = isIsoDate(e.end_date) ? e.end_date : null;
-    if (daysBetween(from, endDate ?? e.start_date) < 0 || daysBetween(e.start_date, to) < 0) {
+    const end = isIsoDate(e.end_date) ? e.end_date : null;
+    if (!inWindow(e.start_date, end)) {
       stats.dropped_out_of_window++;
       continue;
     }
@@ -131,29 +208,26 @@ export async function collectEvents(sub: Pick<Subscriber, "categories" | "cities
       stats.dropped_online++;
       continue;
     }
-
-    // 6. DEADLINE FLAG — computed in code, in IST.
-    const deadline = isIsoDate(e.registration_deadline) ? e.registration_deadline : null;
-    let deadline_status: ScoutEvent["deadline_status"];
-    let days_left: number | null;
-    if (deadline) {
-      days_left = daysBetween(from, deadline);
-      if (days_left < 0) {
-        stats.dropped_closed++;
-        continue;
-      }
-      deadline_status = days_left < DEADLINE_FLAG_DAYS ? "urgent" : "ok";
-    } else {
-      // No published deadline: the event date is the last possible moment to register.
-      days_left = Math.max(0, daysBetween(from, e.start_date));
-      deadline_status = days_left < DEADLINE_FLAG_DAYS ? "event_soon" : "unknown";
+    if (e.relevance_score < MIN_SCORE) {
+      stats.dropped_low_relevance++;
+      continue;
     }
-
-    const [primary, ...rest] = eventSources;
-    const event: ScoutEvent = {
+    const d = withDeadline(e.start_date, isIsoDate(e.registration_deadline) && e.registration_deadline <= e.start_date ? e.registration_deadline : null);
+    if (!d) {
+      stats.dropped_closed++;
+      continue;
+    }
+    const key = dedupeKey(e.title, e.start_date);
+    const existing = events.get(key);
+    if (existing) {
+      stats.duplicates_merged++;
+      existing.other_sources.push({ url: src.url, domain: src.source });
+      continue;
+    }
+    events.set(key, {
       title: e.title.trim(),
       start_date: e.start_date,
-      end_date: endDate && endDate !== e.start_date ? endDate : null,
+      end_date: end && end !== e.start_date ? end : null,
       city,
       venue: e.venue?.trim() || null,
       format: e.format,
@@ -164,42 +238,23 @@ export async function collectEvents(sub: Pick<Subscriber, "categories" | "cities
       category: e.category,
       score: Math.round(e.relevance_score),
       reason: e.relevance_reason.trim(),
-      deadline,
-      deadline_status,
-      days_left,
-      url: primary.url,
-      source_domain: primary.domain,
-      other_sources: rest.map((s) => ({ url: s.url, domain: s.domain })),
-    };
-
-    // 7. DEDUPE — same event found via different sites becomes one entry with several sources.
-    const key = dedupeKey(event.title, event.start_date);
-    const existing = merged.get(key);
-    if (existing) {
-      stats.duplicates_merged++;
-      const seen = new Set([existing.url, ...existing.other_sources.map((s) => s.url)]);
-      for (const s of eventSources) {
-        if (!seen.has(s.url)) existing.other_sources.push({ url: s.url, domain: s.domain });
-      }
-      existing.score = Math.max(existing.score, event.score);
-      if (!existing.deadline && event.deadline) {
-        existing.deadline = event.deadline;
-        existing.deadline_status = event.deadline_status;
-        existing.days_left = event.days_left;
-      }
-    } else {
-      merged.set(key, event);
-    }
+      ...d,
+      url: src.url,
+      source_domain: src.source,
+      other_sources: [],
+    });
   }
 
-  // 8. RANK — highest match first; ties go to the earlier event.
-  const events = [...merged.values()].sort((a, b) => b.score - a.score || a.start_date.localeCompare(b.start_date));
+  // 5. RANK — best match first, ties to the earlier event; keep the top few so it reads in five minutes.
+  const ranked = [...events.values()]
+    .sort((a, b) => b.score - a.score || a.start_date.localeCompare(b.start_date))
+    .slice(0, MAX_EVENTS);
 
-  for (const ev of events) stats.by_domain[ev.source_domain] = (stats.by_domain[ev.source_domain] ?? 0) + 1;
-  stats.final = events.length;
-  stats.flagged = events.filter((e) => e.deadline_status === "urgent" || e.deadline_status === "event_soon").length;
+  for (const ev of ranked) stats.by_domain[ev.source_domain] = (stats.by_domain[ev.source_domain] ?? 0) + 1;
+  stats.final = ranked.length;
+  stats.flagged = ranked.filter((e) => e.deadline_status === "urgent" || e.deadline_status === "event_soon").length;
   stats.duration_ms = Date.now() - started;
-  return { events, stats };
+  return { events: ranked, stats };
 }
 
 /** Full run for one subscriber: collect → store → email. */

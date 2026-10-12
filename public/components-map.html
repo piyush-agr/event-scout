@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Event Scout — Components Map</title>
+<style>
+  body { margin: 0; padding: 24px 16px; background: #ffffff; font-family: Inter, "Segoe UI", Arial, sans-serif; }
+  h1 { text-align: center; color: #14213d; font-size: 30px; margin: 0 0 20px; }
+  .wrap { max-width: 1820px; margin: 0 auto; overflow-x: auto; }
+  svg { min-width: 1100px; width: 100%; height: auto; display: block; }
+  .box { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; text-align: center;
+         font-size: 16.5px; line-height: 1.3; color: #14213d; padding: 8px 10px; box-sizing: border-box; }
+  .actor { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;
+           color: #ffffff; text-align: center; }
+  .actor b { font-size: 20px; }
+  .actor span { font-size: 15px; margin-top: 6px; opacity: 0.9; }
+  .head { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 20px; font-weight: 600; }
+  p.note { max-width: 1100px; margin: 16px auto 0; color: #4b5563; font-size: 14px; text-align: center; }
+</style>
+</head>
+<body>
+<h1>Problem 15 · Industry Event Scout — Components Map</h1>
+<div class="wrap">
+<svg viewBox="0 0 1820 1085" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Swimlane components map for Event Scout">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#14213d"/>
+    </marker>
+  </defs>
+
+  <!-- lane backgrounds -->
+  <rect x="215" y="155" width="1585" height="170" fill="#e6f0fd"/>
+  <rect x="215" y="325" width="1585" height="170" fill="#f1ecfb"/>
+  <rect x="215" y="495" width="1585" height="210" fill="#fdf8dc"/>
+  <rect x="215" y="705" width="1585" height="210" fill="#e9f7ec"/>
+  <rect x="215" y="915" width="1585" height="150" fill="#fde9f0"/>
+
+  <!-- header + actor column -->
+  <rect x="20" y="85" width="1780" height="70" rx="8" fill="#17294a"/>
+  <rect x="20" y="150" width="195" height="915" fill="#17294a"/>
+  <g stroke="#ffffff" stroke-opacity="0.55" stroke-width="1">
+    <line x1="215" y1="85" x2="215" y2="1065"/><line x1="480" y1="85" x2="480" y2="1065"/>
+    <line x1="745" y1="85" x2="745" y2="1065"/><line x1="1010" y1="85" x2="1010" y2="1065"/>
+    <line x1="1275" y1="85" x2="1275" y2="1065"/><line x1="1540" y1="85" x2="1540" y2="1065"/>
+    <line x1="20" y1="325" x2="1800" y2="325"/><line x1="20" y1="495" x2="1800" y2="495"/>
+    <line x1="20" y1="705" x2="1800" y2="705"/><line x1="20" y1="915" x2="1800" y2="915"/>
+  </g>
+
+  <foreignObject x="20" y="85" width="195" height="70"><div xmlns="http://www.w3.org/1999/xhtml" class="head">Actor</div></foreignObject>
+  <foreignObject x="215" y="85" width="265" height="70"><div xmlns="http://www.w3.org/1999/xhtml" class="head">Trigger</div></foreignObject>
+  <foreignObject x="480" y="85" width="265" height="70"><div xmlns="http://www.w3.org/1999/xhtml" class="head">Input</div></foreignObject>
+  <foreignObject x="745" y="85" width="265" height="70"><div xmlns="http://www.w3.org/1999/xhtml" class="head">Context</div></foreignObject>
+  <foreignObject x="1010" y="85" width="265" height="70"><div xmlns="http://www.w3.org/1999/xhtml" class="head">Processing</div></foreignObject>
+  <foreignObject x="1275" y="85" width="265" height="70"><div xmlns="http://www.w3.org/1999/xhtml" class="head">AI</div></foreignObject>
+  <foreignObject x="1540" y="85" width="260" height="70"><div xmlns="http://www.w3.org/1999/xhtml" class="head">Output</div></foreignObject>
+
+  <foreignObject x="20" y="155" width="195" height="170"><div xmlns="http://www.w3.org/1999/xhtml" class="actor"><b>Vikram</b><span>(User)</span></div></foreignObject>
+  <foreignObject x="20" y="325" width="195" height="170"><div xmlns="http://www.w3.org/1999/xhtml" class="actor"><b>Scheduler</b><span>(Vercel Cron)</span></div></foreignObject>
+  <foreignObject x="20" y="495" width="195" height="210"><div xmlns="http://www.w3.org/1999/xhtml" class="actor"><b>System</b><span>(App Backend + Supabase)</span></div></foreignObject>
+  <foreignObject x="20" y="705" width="195" height="210"><div xmlns="http://www.w3.org/1999/xhtml" class="actor"><b>AI Models</b><span>(Gemini Flash)</span></div></foreignObject>
+  <foreignObject x="20" y="915" width="195" height="150"><div xmlns="http://www.w3.org/1999/xhtml" class="actor"><b>Email Service</b><span>(Gmail SMTP)</span></div></foreignObject>
+
+  <!-- arrows -->
+  <g fill="none" stroke="#14213d" stroke-width="1.6" stroke-dasharray="6 5" marker-end="url(#arrow)">
+    <path d="M460 240 H500"/>
+    <path d="M725 240 H745 V600 H765"/>
+    <path d="M460 410 H745 V600 H765"/>
+    <path d="M877 540 V510 H1407 V720"/>
+    <path d="M1407 805 V820"/>
+    <path d="M1295 862 H1275 V640 H1255"/>
+    <path d="M1142 685 V940"/>
+    <path d="M1255 990 H1672 V305"/>
+  </g>
+
+  <!-- boxes -->
+  <rect x="235" y="185" width="225" height="110" rx="10" fill="#e0e0fb" stroke="#3b3bd6" stroke-width="2"/>
+  <foreignObject x="235" y="185" width="225" height="110"><div xmlns="http://www.w3.org/1999/xhtml" class="box">Signs up, edits settings, or clicks “Send my digest now”</div></foreignObject>
+
+  <rect x="235" y="355" width="225" height="110" rx="10" fill="#e0e0fb" stroke="#3b3bd6" stroke-width="2"/>
+  <foreignObject x="235" y="355" width="225" height="110"><div xmlns="http://www.w3.org/1999/xhtml" class="box">Fires every Monday 7:00 AM IST (01:30 UTC)</div></foreignObject>
+
+  <rect x="500" y="185" width="225" height="110" rx="10" fill="#dcecfc" stroke="#1d6fd6" stroke-width="2"/>
+  <foreignObject x="500" y="185" width="225" height="110"><div xmlns="http://www.w3.org/1999/xhtml" class="box">Name, email, focus areas + cities (multi-select, “All”, add your own)</div></foreignObject>
+
+  <rect x="765" y="540" width="225" height="120" rx="10" fill="#dff5e3" stroke="#2f9e4f" stroke-width="2"/>
+  <foreignObject x="765" y="540" width="225" height="120"><div xmlns="http://www.w3.org/1999/xhtml" class="box">Loads each subscriber’s settings from Supabase; sets next-30-days window in IST</div></foreignObject>
+
+  <rect x="1295" y="720" width="225" height="85" rx="10" fill="#fde0ef" stroke="#e0218a" stroke-width="2"/>
+  <foreignObject x="1295" y="720" width="225" height="85"><div xmlns="http://www.w3.org/1999/xhtml" class="box" style="font-size:15px">Searches the live web with Google Search; returns findings + source pages</div></foreignObject>
+
+  <rect x="1295" y="820" width="225" height="85" rx="10" fill="#fde0ef" stroke="#e0218a" stroke-width="2"/>
+  <foreignObject x="1295" y="820" width="225" height="85"><div xmlns="http://www.w3.org/1999/xhtml" class="box" style="font-size:15px">Structures findings into event records; scores match 0–100 with a reason</div></foreignObject>
+
+  <rect x="1030" y="525" width="225" height="160" rx="10" fill="#fdecc8" stroke="#f0a020" stroke-width="2"/>
+  <foreignObject x="1030" y="525" width="225" height="160"><div xmlns="http://www.w3.org/1999/xhtml" class="box" style="font-size:14.5px">Validates records, drops events with no real source URL, filters by date + city, merges duplicates, ranks, flags deadlines under 7 days, saves digest</div></foreignObject>
+
+  <rect x="1030" y="940" width="225" height="100" rx="10" fill="#dcecfc" stroke="#1d6fd6" stroke-width="2"/>
+  <foreignObject x="1030" y="940" width="225" height="100"><div xmlns="http://www.w3.org/1999/xhtml" class="box">Sends the digest email to each subscriber</div></foreignObject>
+
+  <rect x="1560" y="170" width="225" height="135" rx="10" fill="#fde2df" stroke="#e03a2f" stroke-width="2"/>
+  <foreignObject x="1560" y="170" width="225" height="135"><div xmlns="http://www.w3.org/1999/xhtml" class="box" style="font-size:14.5px">Monday email: ranked events with context, red flag if registration closes in under 7 days. Same digest + run log on the web dashboard</div></foreignObject>
+</svg>
+</div>
+<p class="note">AI is used only for the two steps in the AI lane. Filtering, deduplication, ranking order, deadline flags and the “real source URL” check are ordinary code. Full detail: COMPONENTS_MAP.md in the GitHub repo.</p>
+</body>
+</html>

@@ -94,10 +94,8 @@ function fromJsonLd(e: Json, source: string, city: string): Omit<Candidate, "id"
 
   const loc = first(e.location);
   const addr = loc ? first(loc.address) : null;
-  const venue =
-    [str(loc?.name), addr ? str(addr.streetAddress) : str(loc?.address)]
-      .filter((v, i, a) => v && a.indexOf(v) === i)
-      .join(", ") || null;
+  // Sites often repeat the address inside the venue name, so prefer the name alone.
+  const venue = str(loc?.name) ?? (addr ? str(addr.streetAddress) : str(loc?.address));
 
   const mode = String(e.eventAttendanceMode ?? "");
   const locType = String(loc?.["@type"] ?? "");
@@ -130,7 +128,7 @@ function fromJsonLd(e: Json, source: string, city: string): Omit<Candidate, "id"
     start_date: start,
     end_date: toISTDate(e.endDate),
     url,
-    venue: venue ? clean(venue).slice(0, 140) : null,
+    venue: venue ? clean(venue).slice(0, 90) : null,
     organizer: str(first(e.organizer)?.name),
     price,
     description: clean(str(e.description) ?? "").slice(0, 200),

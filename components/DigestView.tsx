@@ -1,5 +1,5 @@
 import { formatDate, formatDateTimeIST } from "@/lib/dates";
-import { dateRange, deadlineLabel } from "@/lib/email";
+import { dateRange, deadlineLabel, placeLine } from "@/lib/email";
 import type { Digest } from "@/lib/types";
 
 /** The digest as a web page — same content and order as the email. */
@@ -43,7 +43,7 @@ export default function DigestView({ digest, showRunDetails = true }: { digest: 
                 {e.title}
               </a>
               <div className="meta">
-                {[dateRange(e), [e.venue, e.city].filter(Boolean).join(", "), e.price].filter(Boolean).join(" · ")}
+                {[dateRange(e), placeLine(e), e.price].filter(Boolean).join(" · ")}
               </div>
               <p>{e.summary}</p>
               {e.audience && (

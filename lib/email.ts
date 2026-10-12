@@ -1,5 +1,5 @@
 import nodemailer from "nodemailer";
-import { DEADLINE_FLAG_DAYS, WINDOW_DAYS } from "./config";
+import { WINDOW_DAYS } from "./config";
 import { formatDate } from "./dates";
 import type { Digest, ScoutEvent, Subscriber } from "./types";
 
@@ -21,13 +21,20 @@ export function deadlineLabel(e: ScoutEvent): { text: string; urgent: boolean } 
   }
 }
 
+/** "Venue, City" without repeating the city when the venue text already names it. */
+export function placeLine(e: ScoutEvent): string {
+  if (!e.venue) return e.city;
+  const cityWord = e.city.split(" ")[0].toLowerCase();
+  return e.venue.toLowerCase().includes(cityWord) ? e.venue : `${e.venue}, ${e.city}`;
+}
+
 export function dateRange(e: ScoutEvent): string {
   return e.end_date ? `${formatDate(e.start_date)} – ${formatDate(e.end_date)}` : formatDate(e.start_date);
 }
 
 function eventBlock(e: ScoutEvent, rank: number): string {
   const d = deadlineLabel(e);
-  const meta = [dateRange(e), [e.venue, e.city].filter(Boolean).join(", "), e.price].filter(Boolean).join(" · ");
+  const meta = [dateRange(e), placeLine(e), e.price].filter(Boolean).join(" · ");
   return `
   <tr><td style="padding:16px 0;border-bottom:1px solid #e5e7eb;">
     ${
@@ -54,7 +61,7 @@ export function renderDigestEmail(sub: Subscriber, digest: Digest, baseUrl: stri
   const flagged = events.filter((e) => e.deadline_status === "urgent" || e.deadline_status === "event_soon");
   const subject =
     `Event Scout: ${events.length} event${events.length === 1 ? "" : "s"} in the next ${WINDOW_DAYS} days` +
-    (flagged.length ? ` — ${flagged.length} closing within ${DEADLINE_FLAG_DAYS} days` : "");
+    (flagged.length ? ` — ${flagged.length} to act on this week` : "");
 
   const html = `<!doctype html><html><body style="margin:0;background:#f3f4f6;font-family:Arial,Helvetica,sans-serif;">
 <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px 12px;">

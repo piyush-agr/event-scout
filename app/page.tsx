@@ -8,6 +8,7 @@ import { maskEmail, recentDigests, type DigestRow } from "@/lib/db";
 export const dynamic = "force-dynamic";
 
 const TRIGGER_LABEL: Record<string, string> = { cron: "Monday schedule", manual: "Send now button", signup: "Sign-up" };
+const SOURCES = ["Eventbrite", "AllEvents", "Meetup", "Luma", "Conference sites", "Industry bodies", "LinkedIn posts"];
 
 function daysChip(days: number | null): string {
   if (days === null) return "Soon";
@@ -30,15 +31,17 @@ export default async function Home() {
   return (
     <>
       <section className="hero">
-        <div className="wrap">
+        <div className="wrap hero-grid">
           <div>
-            <h1>Never miss the right room again</h1>
-            <p>
-              Every Monday at 7 AM, one email with the conferences, CXO summits and roundtables worth your time in the
+            <h1>
+              Never miss the <span>right room</span>
+            </h1>
+            <p className="hero-copy">
+              One email every Monday at 7 AM with the conferences, CXO summits and roundtables worth your time in the
               next 30 days. Ranked for your focus areas, in your cities.
             </p>
             <div className="hero-actions">
-              <a className="button" href="#signup">
+              <a className="button lime" href="#signup">
                 Get my digest
               </a>
               <a className="button outline" href="#latest">
@@ -49,7 +52,7 @@ export default async function Home() {
 
           <div className="this-week">
             <h2>
-              <span className="count">{flagged.length}</span> to act on this week
+              <span className="count">{String(flagged.length).padStart(2, "0")}</span> to act on this week
             </h2>
             {flagged.length > 0 ? (
               <>
@@ -63,47 +66,63 @@ export default async function Home() {
                     </li>
                   ))}
                 </ul>
-                {flagged.length > 4 && <p className="more">and {flagged.length - 4} more in the latest digest below</p>}
+                {flagged.length > 4 && <p className="more">and {flagged.length - 4} more in the digest below</p>}
               </>
             ) : (
-              <p className="calm">
-                {latest ? "Nothing closes in the next 7 days." : "Sign up to generate the first digest."}
-              </p>
+              <p className="calm">{latest ? "Nothing closes in the next 7 days." : "Sign up to generate the first digest."}</p>
             )}
+          </div>
+        </div>
+
+        <div className="ticker" aria-label={`Sources checked: ${SOURCES.join(", ")}`}>
+          <div className="ticker-track" aria-hidden="true">
+            {[...SOURCES, ...SOURCES, ...SOURCES, ...SOURCES].map((s, i) => (
+              <span key={i}>{s}</span>
+            ))}
           </div>
         </div>
       </section>
 
       <div className="wrap">
-        <div className="signup" id="signup">
-          <h2 className="signup-title">Set up your briefing</h2>
-          <p className="signup-note">Choose what you advise on and where you travel. You can change both at any time.</p>
-          <PrefsForm mode="signup" categoryOptions={CATEGORY_OPTIONS} cityOptions={CITY_OPTIONS} />
-          <p className="after-form">
-            Your first digest arrives in about two minutes. Every email carries a private link to change your cities
-            and focus areas, with no password and no code.
-          </p>
-        </div>
+        <section className="section" id="signup">
+          <div className="signup-grid">
+            <div>
+              <h2>Get the digest</h2>
+              <p>Pick what you advise on and where you travel. Change both whenever your focus shifts.</p>
+            </div>
+            <div>
+              <PrefsForm mode="signup" categoryOptions={CATEGORY_OPTIONS} cityOptions={CITY_OPTIONS} />
+              <p className="after-form">
+                Your first digest arrives in about two minutes. Every email carries a private link to change your
+                cities and focus areas, with no password and no code.
+              </p>
+            </div>
+          </div>
+        </section>
 
         <section className="section" id="latest">
-          <h2>Latest digest</h2>
-          {latest ? (
-            <>
-              <p className="section-note">
+          <div className="section-head">
+            <h2>Latest digest</h2>
+            {latest && (
+              <p>
                 Live data from the most recent run, for{" "}
-                {latest.subscribers ? maskEmail(latest.subscribers.email) : "a subscriber"}. Entries marked in red need action
-                within 7 days. <Link href={`/digest/${latest.id}`}>Open on its own page</Link>
+                {latest.subscribers ? maskEmail(latest.subscribers.email) : "a subscriber"}.{" "}
+                <Link href={`/digest/${latest.id}`}>Open on its own page</Link>
               </p>
-              <DigestView digest={latest} showAlert={false} publicView />
-            </>
+            )}
+          </div>
+          {latest ? (
+            <DigestView digest={latest} showAlert={false} publicView />
           ) : (
             <p className="msg">No digest yet. Sign up above and the first one appears here.</p>
           )}
         </section>
 
         <section className="section" id="history">
-          <h2>Run history</h2>
-          <p className="section-note">Every run is recorded, including the ones that failed.</p>
+          <div className="section-head">
+            <h2>Run history</h2>
+            <p>Every run is recorded, including the ones that failed.</p>
+          </div>
           {loadError && <p className="msg error">{loadError}</p>}
           <div className="table-wrap">
             <table>
@@ -122,7 +141,7 @@ export default async function Home() {
                   const sent = d.email_status === "sent";
                   const result =
                     d.status === "failed" ? "Run failed" : d.status === "empty" ? "No events" : sent ? "Emailed" : "Email failed";
-                  const tone = d.status === "ok" && sent ? "good" : d.status === "empty" ? "warn" : "bad";
+                  const tone = d.status === "ok" && sent ? "good" : d.status === "empty" ? "" : "bad";
                   return (
                     <tr key={d.id}>
                       <td>
@@ -147,48 +166,42 @@ export default async function Home() {
             </table>
           </div>
         </section>
+      </div>
 
-        <section className="section">
-          <h2>How it works</h2>
-          <p className="section-note">Step 4 is the only one that uses AI. Everything else is ordinary code.</p>
-          <ol className="steps">
+      <section className="dark-band">
+        <div className="wrap">
+          <div className="section-head">
+            <h2>How it works</h2>
+            <p>Six steps, one of them AI. The lime step is where Gemini Flash does the judging.</p>
+          </div>
+          <ol className="bento">
             <li>
-              <span>
-                <b>A run starts.</b> Automatically every Monday at 7:00 AM IST, or when you press “Send my digest now”.
-              </span>
+              <b>A run starts</b>
+              <span>Every Monday at 7:00 AM IST, or when you press “Send my digest now”.</span>
             </li>
             <li>
-              <span>
-                <b>Live sources are fetched.</b> Eventbrite, AllEvents, Meetup and Luma for each of your cities, plus
-                web search for conference sites and public LinkedIn posts.
-              </span>
+              <b>Live sources are fetched</b>
+              <span>Eventbrite, AllEvents, Meetup and Luma for each city, plus web search for conference sites and LinkedIn posts.</span>
             </li>
             <li>
-              <span>
-                <b>The list is cleaned.</b> Only the next 30 days are kept, and the same event found on several sites is
-                merged.
-              </span>
+              <b>The list is cleaned</b>
+              <span>Only the next 30 days are kept. The same event found on several sites is merged.</span>
             </li>
             <li className="ai">
-              <span>
-                <b>Gemini Flash reads every event.</b> It scores each one from 0 to 100 against your focus areas, says
-                why, and writes the summary.
-              </span>
+              <b>Gemini reads every event</b>
+              <span>It scores each one from 0 to 100 against your focus areas, says why, and writes the summary.</span>
             </li>
             <li>
-              <span>
-                <b>Checks and flags.</b> Anything not tied to a real page is dropped. Events are ranked, and deadlines
-                under 7 days are flagged in red.
-              </span>
+              <b>Checks, flags, contacts</b>
+              <span>Anything not tied to a real page is dropped. Deadlines under 7 days are flagged. Organiser contacts are pulled from the event page.</span>
             </li>
             <li>
-              <span>
-                <b>You get the email.</b> The same digest is saved and shown on this page.
-              </span>
+              <b>You get the email</b>
+              <span>The same digest is saved and shown on this page.</span>
             </li>
           </ol>
-        </section>
-      </div>
+        </div>
+      </section>
     </>
   );
 }

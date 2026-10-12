@@ -22,7 +22,7 @@ export default async function ManagePage(props: {
   const lastGood = latest && latest.status !== "ok" ? await latestGoodDigestFor(sub.id) : null;
 
   return (
-    <div className="wrap">
+    <div className="wrap page">
       <div className="page-top">
         <h1>Hi {sub.name}</h1>
         <p>
@@ -33,8 +33,10 @@ export default async function ManagePage(props: {
       </div>
 
       <section className="section">
-        <h2>Your settings</h2>
-        <p className="section-note">Changes apply from your next digest.</p>
+        <div className="section-head">
+          <h2>Your settings</h2>
+          <p>Changes apply from your next digest.</p>
+        </div>
         <PrefsForm
           mode="manage"
           token={sub.token}
@@ -46,7 +48,9 @@ export default async function ManagePage(props: {
       </section>
 
       <section className="section">
-        <h2>Your latest digest</h2>
+        <div className="section-head">
+          <h2>Your latest digest</h2>
+        </div>
         {latest ? (
           <DigestView digest={latest} />
         ) : (
@@ -56,7 +60,9 @@ export default async function ManagePage(props: {
 
       {lastGood && (
         <section className="section">
-          <h2>Previous successful digest</h2>
+          <div className="section-head">
+            <h2>Previous successful digest</h2>
+          </div>
           <DigestView digest={lastGood} />
         </section>
       )}

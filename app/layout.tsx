@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Sans, Newsreader } from "next/font/google";
+import { Antonio, Instrument_Sans } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
 
-const display = Newsreader({ subsets: ["latin"], variable: "--font-display" });
-const body = IBM_Plex_Sans({ subsets: ["latin"], weight: ["400", "500", "600"], variable: "--font-body" });
+const display = Antonio({ subsets: ["latin"], variable: "--font-display" });
+const body = Instrument_Sans({ subsets: ["latin"], variable: "--font-body" });
 
 export const metadata: Metadata = {
   title: "Event Scout — weekly event digest",
@@ -18,11 +18,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <header className="site-header">
           <div className="wrap">
             <Link href="/" className="brand">
-              Event Scout <small>Weekly event briefing</small>
+              <i aria-hidden="true" />
+              Event Scout
             </Link>
             <nav>
-              <Link href="/#latest">Latest digest</Link>
-              <Link href="/#history">Run history</Link>
+              <Link href="/#latest">Digest</Link>
+              <Link href="/#history">History</Link>
               <a href="/components-map.html">Components map</a>
             </nav>
           </div>
@@ -34,6 +35,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               Events are collected live from Eventbrite, AllEvents, Meetup, Luma and web search, then ranked by Gemini
               Flash. Every link goes to the page the event was found on. Nothing is hardcoded.
             </p>
+            <div className="wordmark" aria-hidden="true">
+              <b>Event</b> Scout
+            </div>
           </div>
         </footer>
       </body>

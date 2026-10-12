@@ -24,9 +24,9 @@ function Ticket({ event: e, rank, direct }: { event: ScoutEvent; rank: number; d
   return (
     <li className={d.urgent ? "ticket is-urgent" : "ticket"}>
       <div className="stub">
-        <span className="stub-day">{start.day}</span>
-        <span className="stub-month">{start.month}</span>
         <span className="stub-weekday">{start.weekday}</span>
+        <span className="stub-day">{start.day.padStart(2, "0")}</span>
+        <span className="stub-month">{start.month}</span>
         {end && (
           <span className="stub-until">
             to {end.day} {end.month}
@@ -34,35 +34,27 @@ function Ticket({ event: e, rank, direct }: { event: ScoutEvent; rank: number; d
         )}
       </div>
       <div className="ticket-body">
-        <div className="ticket-top">
-          <span className="rank">#{rank}</span>
-          <span className={`score ${tier}`}>
-            <b>{e.score}</b> match
-            <i style={{ "--v": `${e.score}%` } as React.CSSProperties} aria-hidden="true" />
-          </span>
-          <span className="tag">{e.category}</span>
-        </div>
         <h3>
           <a href={e.url} target="_blank" rel="noopener noreferrer">
             {e.title}
           </a>
         </h3>
-        <p className="place">
-          {placeLine(e)}
-          {e.price && <span className={e.price === "Free" ? "price free" : "price"}>{priceLabel(e.price)}</span>}
-        </p>
+        <p className="place">{placeLine(e)}</p>
         {d.urgent && <p className="deadline urgent">{d.text}</p>}
         <p className="summary">{e.summary}</p>
         <p className="fit">
-          <b>Why it fits:</b> {e.reason}
+          <b>Why it fits</b>
+          {e.reason}
         </p>
         {e.audience && (
           <p className="who">
-            <b>In the room:</b> {e.audience}
+            <b>In the room</b>
+            {e.audience}
           </p>
         )}
         <p className="organiser">
-          <b>Contact:</b> {e.contact?.name ?? e.organizer ?? "organiser not named"}
+          <b>Contact</b>
+          {e.contact?.name ?? e.organizer ?? "Organiser not named"}
           {links.length === 0 && !hidden && <span className="na">, details not available on the listing</span>}
           {links.map((l) => (
             <a key={l.href} href={l.href} target="_blank" rel="noopener noreferrer">
@@ -74,14 +66,13 @@ function Ticket({ event: e, rank, direct }: { event: ScoutEvent; rank: number; d
             Search LinkedIn for the event team
           </a>
         </p>
-        {!d.urgent &&
-          (e.deadline ? (
-            <p className="deadline known">
-              Registration closes <b>{formatDate(e.deadline)}</b>
-            </p>
-          ) : (
-            <p className="deadline none">No registration deadline listed</p>
-          ))}
+        <ul className="tags">
+          <li className="rank">Rank {rank}</li>
+          <li className={`score ${tier}`}>{e.score} match</li>
+          <li>{e.category}</li>
+          {e.price && <li className={e.price === "Free" ? "free" : ""}>{priceLabel(e.price)}</li>}
+          {!d.urgent && <li>{e.deadline ? `Closes ${formatDate(e.deadline)}` : "No deadline listed"}</li>}
+        </ul>
         <p className="found">
           Found on{" "}
           {sources.map((s, i) => (
@@ -94,6 +85,11 @@ function Ticket({ event: e, rank, direct }: { event: ScoutEvent; rank: number; d
           ))}
         </p>
       </div>
+      <a className="go" href={e.url} target="_blank" rel="noopener noreferrer" aria-label={`Open ${e.title}`}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+          <path d="M5 19 19 5M8 5h11v11" />
+        </svg>
+      </a>
     </li>
   );
 }
@@ -144,13 +140,16 @@ export default function DigestView({
           <ul>
             {flagged.map((e) => (
               <li key={e.url + e.title}>
-                <b>{e.title}</b> <span>{deadlineLabel(e).text}</span>
+                {e.title} <span>{deadlineLabel(e).text}</span>
               </li>
             ))}
           </ul>
         </div>
       )}
 
+      <div className="bar">
+        <span className="label">Ranked by match</span>
+      </div>
       <ol className="tickets">
         {events.map((e, i) => (
           <Ticket key={e.url + e.title} event={e} rank={i + 1} direct={!publicView} />

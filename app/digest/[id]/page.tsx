@@ -12,7 +12,7 @@ export default async function DigestPage(props: { params: Promise<{ id: string }
   if (!digest) notFound();
 
   return (
-    <div className="wrap">
+    <div className="wrap page">
       <div className="page-top">
         <h1>Weekly event digest</h1>
         <p>The web copy of the email sent for this run.</p>

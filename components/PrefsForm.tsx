@@ -143,7 +143,7 @@ export default function PrefsForm(props: Props) {
         onChange={setCities}
       />
       <button type="submit" className="button" disabled={busy}>
-        {busy ? "Saving…" : props.mode === "signup" ? "Sign up and send my first digest" : "Save settings"}
+        {busy ? "Saving…" : props.mode === "signup" ? "Send my first digest" : "Save settings"}
       </button>
       {message && <p className={`msg ${message.kind}`}>{message.text}</p>}
     </form>

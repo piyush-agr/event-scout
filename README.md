@@ -54,6 +54,7 @@ npm run dev
 | `GEMINI_FALLBACK_MODELS` | Optional. Comma-separated Gemini Flash models to try if the first is busy |
 | `SUPABASE_URL`, `SUPABASE_KEY` | Supabase project URL and API key (server-side only) |
 | `GMAIL_USER`, `GMAIL_APP_PASSWORD` | Sending Gmail address and its app password |
+| `LUSHA_API_KEY` | Optional. Finds each organiser's LinkedIn company page |
 | `CRON_SECRET` | Random string; Vercel Cron sends it as a Bearer token |
 
 Database schema: two tables, `subscribers` and `digests` (see `supabase/schema.sql`).

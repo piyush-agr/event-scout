@@ -47,6 +47,7 @@ flowchart LR
 | Source aggregation | Service | Fetch and parse live listings and search results | Cities, focus areas | Candidates with real URLs, per-source report | `fetch`, schema.org JSON-LD parsing, RSS parsing | `lib/sources.ts` | R4, E2, E6 |
 | Pipeline | Service | Orchestrates fetch → filter → dedupe → AI → validate → rank → flag → store → email | Subscriber | Digest | TypeScript | `lib/pipeline.ts` | R3, R5–R7, R11, E6 |
 | Assess events | AI call | Judge, score, summarise; extract events from snippets | Candidates, prefs | JSON records | Gemini Flash, JSON schema | `lib/gemini.ts` `assessEvents` | R5, R7, R9, E1 |
+| Organiser contact | Service + external API | Find each organiser's LinkedIn company page; build a LinkedIn people-search link for the event team | Organiser names of the final events | LinkedIn URLs on each event | Lusha company API, cached in Supabase `organizers` | `lib/lusha.ts`, `lib/links.ts` | R9 |
 | Email | Service | Render and send the digest | Digest | Email | Nodemailer + Gmail SMTP | `lib/email.ts` | R1, R8, R11 |
 | Database | Database | Subscribers, digests, run logs | — | — | Supabase Postgres | `lib/db.ts`, `supabase/schema.sql` | R10 |
 | Date helpers | Service | IST dates, day differences | — | — | TypeScript | `lib/dates.ts` | R3, R11 |
@@ -82,6 +83,8 @@ Fetching, the 30-day window, de-duplication, the "tied to a fetched page" check,
 | Luma | `lu.ma/{city}` | JSON-LD | Only cities Luma has a page for |
 | Web search | Bing RSS results, two queries per city (general, and `site:linkedin.com`) | Title, link, snippet | Only indexed pages; snippets often lack a date |
 
+| Lusha | Company API, by organiser name | LinkedIn company page and domain only | Free plan has 40 credits; results are cached and a run makes at most 3 new lookups |
+
 A failing source is recorded in the run log and does not stop the run. There are no hardcoded or mock events. Category and city *options* in the form are presets, and users can add their own.
 
 ## 6. Known limitations and design decisions
@@ -96,3 +99,4 @@ A failing source is recorded in the run log and does not stop the run. There are
 - **Vercel Hobby cron** can fire up to an hour late, so the digest arrives between 7:00 and 8:00 AM IST.
 - **Supabase key** is used server-side only. Tables are open to that key, so it must stay out of the browser (it does).
 - **Digest pages are public by id** so graders can verify output; subscriber emails are masked on public pages.
+- **Organiser LinkedIn:** the listing sites name an organiser for only some events, and Lusha matches by company name, so a page is shown only when the names overlap. Individual people are not looked up or stored; the "Find the event team" link opens a LinkedIn search in the reader's own account instead.

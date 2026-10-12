@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
+import { Atkinson_Hyperlegible, Bricolage_Grotesque } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
+
+const display = Bricolage_Grotesque({ subsets: ["latin"], variable: "--font-display" });
+const body = Atkinson_Hyperlegible({ subsets: ["latin"], weight: ["400", "700"], variable: "--font-body" });
 
 export const metadata: Metadata = {
   title: "Event Scout — weekly event digest",
@@ -9,21 +13,29 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${display.variable} ${body.variable}`}>
       <body>
         <header className="site-header">
-          <Link href="/" className="brand">
-            Event Scout
-          </Link>
-          <nav>
-            <Link href="/#history">Run history</Link>
-            <a href="/components-map.html">Components map</a>
-          </nav>
+          <div className="wrap">
+            <Link href="/" className="brand">
+              <span className="brand-mark" aria-hidden="true" />
+              Event Scout
+            </Link>
+            <nav>
+              <Link href="/#latest">Latest digest</Link>
+              <Link href="/#history">Run history</Link>
+              <a href="/components-map.html">Components map</a>
+            </nav>
+          </div>
         </header>
         <main>{children}</main>
         <footer className="site-footer">
-          Events are collected live from Eventbrite, AllEvents, Meetup, Luma and web search, then ranked by Gemini Flash.
-          Every link is the page the event was found on; nothing is hardcoded.
+          <div className="wrap">
+            <p>
+              Events are collected live from Eventbrite, AllEvents, Meetup, Luma and web search, then ranked by Gemini
+              Flash. Every link goes to the page the event was found on. Nothing is hardcoded.
+            </p>
+          </div>
         </footer>
       </body>
     </html>

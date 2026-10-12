@@ -1,83 +1,145 @@
 import { formatDate, formatDateTimeIST } from "@/lib/dates";
-import { dateRange, deadlineLabel, placeLine } from "@/lib/email";
-import type { Digest } from "@/lib/types";
+import { deadlineLabel, placeLine, priceLabel } from "@/lib/email";
+import type { Digest, ScoutEvent } from "@/lib/types";
 
-/** The digest as a web page — same content and order as the email. */
-export default function DigestView({ digest, showRunDetails = true }: { digest: Digest; showRunDetails?: boolean }) {
-  const { events, stats } = digest;
-  const flagged = events.filter((e) => e.deadline_status === "urgent" || e.deadline_status === "event_soon");
+const isFlagged = (e: ScoutEvent) => e.deadline_status === "urgent" || e.deadline_status === "event_soon";
+
+/** Day, month and weekday for the ticket stub, from a YYYY-MM-DD string. */
+function stubParts(date: string) {
+  const d = new Date(`${date}T00:00:00Z`);
+  const part = (opts: Intl.DateTimeFormatOptions) => d.toLocaleDateString("en-IN", { ...opts, timeZone: "UTC" });
+  return { day: part({ day: "numeric" }), month: part({ month: "short" }), weekday: part({ weekday: "short" }) };
+}
+
+function Ticket({ event: e, rank }: { event: ScoutEvent; rank: number }) {
+  const d = deadlineLabel(e);
+  const start = stubParts(e.start_date);
+  const end = e.end_date ? stubParts(e.end_date) : null;
+  const tier = e.score >= 80 ? "high" : e.score >= 60 ? "" : "low";
+  const sources = [{ url: e.url, domain: e.source_domain }, ...e.other_sources.slice(0, 2)];
 
   return (
-    <section>
-      <p className="hint">
-        Generated {formatDateTimeIST(digest.created_at)} · trigger: {digest.trigger} · window{" "}
-        {formatDate(stats.window.from)} to {formatDate(stats.window.to)} · email: {digest.email_status ?? "pending"}
-      </p>
+    <li className={d.urgent ? "ticket is-urgent" : "ticket"}>
+      <div className="stub">
+        <span className="stub-day">{start.day}</span>
+        <span className="stub-month">{start.month}</span>
+        <span className="stub-weekday">{start.weekday}</span>
+        {end && (
+          <span className="stub-until">
+            to {end.day} {end.month}
+          </span>
+        )}
+      </div>
+      <div className="ticket-body">
+        <div className="ticket-top">
+          <span className="rank">#{rank}</span>
+          <span className={`score ${tier}`}>
+            <b>{e.score}</b> match
+          </span>
+          <span className="tag">{e.category}</span>
+        </div>
+        <h3>
+          <a href={e.url} target="_blank" rel="noopener noreferrer">
+            {e.title}
+          </a>
+        </h3>
+        <p className="place">
+          {placeLine(e)}
+          {e.price && <span className={e.price === "Free" ? "price free" : "price"}>{priceLabel(e.price)}</span>}
+        </p>
+        {d.urgent && <p className="deadline urgent">{d.text}</p>}
+        <p className="summary">{e.summary}</p>
+        <p className="fit">
+          <mark>Why it fits</mark>
+          {e.reason}
+        </p>
+        {e.audience && (
+          <p className="who">
+            <b>In the room:</b> {e.audience}
+          </p>
+        )}
+        {!d.urgent &&
+          (e.deadline ? (
+            <p className="deadline known">
+              Registration closes <b>{formatDate(e.deadline)}</b>
+            </p>
+          ) : (
+            <p className="deadline none">No registration deadline listed</p>
+          ))}
+        <p className="found">
+          Found on{" "}
+          {sources.map((s, i) => (
+            <span key={s.url}>
+              {i > 0 && ", "}
+              <a href={s.url} target="_blank" rel="noopener noreferrer">
+                {s.domain}
+              </a>
+            </span>
+          ))}
+        </p>
+      </div>
+    </li>
+  );
+}
 
-      {digest.status === "failed" && <p className="msg error">This run failed: {stats.error}</p>}
-      {digest.status === "empty" && <p className="msg">The search ran but no event passed the filters.</p>}
+const STARTED_BY: Record<string, string> = { cron: "Monday schedule", signup: "sign-up", manual: "Send now button" };
 
-      {flagged.length > 0 && (
-        <div className="alert">
-          <strong>⚠ Act this week ({flagged.length})</strong>
+/** The digest as a web page — same content and order as the email. */
+export default function DigestView({ digest, showAlert = true }: { digest: Digest; showAlert?: boolean }) {
+  const { events, stats } = digest;
+  const flagged = events.filter(isFlagged);
+  const emailed = digest.email_status === "sent";
+
+  return (
+    <div>
+      <ul className="facts">
+        <li className="fact">
+          Generated <b>{formatDateTimeIST(digest.created_at)}</b>
+        </li>
+        <li className="fact">
+          Covers <b>{formatDate(stats.window.from)}</b> to <b>{formatDate(stats.window.to)}</b>
+        </li>
+        <li className="fact">
+          Started by <b>{STARTED_BY[digest.trigger] ?? digest.trigger}</b>
+        </li>
+        <li className={emailed ? "fact good" : digest.email_status?.startsWith("failed") ? "fact bad" : "fact"}>
+          {emailed ? "Emailed to subscriber" : `Email ${digest.email_status ?? "pending"}`.slice(0, 60)}
+        </li>
+      </ul>
+
+      {digest.status === "failed" && <p className="msg error">This run could not finish: {stats.error}</p>}
+      {digest.status === "empty" && (
+        <p className="msg">The sources were checked but no event matched. Add more cities or focus areas and run again.</p>
+      )}
+
+      {showAlert && flagged.length > 0 && (
+        <div className="act">
+          <h3>
+            <span className="count">{flagged.length}</span> Act this week
+          </h3>
           <ul>
             {flagged.map((e) => (
               <li key={e.url + e.title}>
-                {e.title} — {deadlineLabel(e).text}
+                <b>{e.title}</b>: {deadlineLabel(e).text}
               </li>
             ))}
           </ul>
         </div>
       )}
 
-      <ol className="events">
-        {events.map((e, i) => {
-          const d = deadlineLabel(e);
-          return (
-            <li key={e.url + e.title} className={d.urgent ? "event urgent" : "event"}>
-              {d.urgent && <div className="flag">⚠ {d.text}</div>}
-              <div className="rank">
-                #{i + 1} · Match {e.score}/100 · {e.category}
-              </div>
-              <a className="title" href={e.url} target="_blank" rel="noopener noreferrer">
-                {e.title}
-              </a>
-              <div className="meta">
-                {[dateRange(e), placeLine(e), e.price].filter(Boolean).join(" · ")}
-              </div>
-              <p>{e.summary}</p>
-              {e.audience && (
-                <p>
-                  <b>Who&apos;s there:</b> {e.audience}
-                </p>
-              )}
-              <p>
-                <b>Why it fits:</b> {e.reason}
-              </p>
-              {!d.urgent && <p className="hint">{d.text}</p>}
-              <p className="hint">
-                Source:{" "}
-                {[{ url: e.url, domain: e.source_domain }, ...e.other_sources.slice(0, 3)].map((s, j) => (
-                  <span key={s.url}>
-                    {j > 0 && ", "}
-                    <a href={s.url} target="_blank" rel="noopener noreferrer">
-                      {s.domain}
-                    </a>
-                  </span>
-                ))}
-              </p>
-            </li>
-          );
-        })}
+      <ol className="tickets">
+        {events.map((e, i) => (
+          <Ticket key={e.url + e.title} event={e} rank={i + 1} />
+        ))}
       </ol>
 
-      {showRunDetails && (
-        <details className="run-details">
-          <summary>How this digest was built (run log)</summary>
+      <details className="run-details">
+        <summary>How this digest was built</summary>
+        <div className="table-wrap">
           <table>
             <tbody>
               <tr><td>AI model</td><td>{stats.model}</td></tr>
-              <tr><td>Live sources fetched</td><td>{(stats.sources ?? []).map((r) => `${r.source} / ${r.city}: ${r.ok ? r.found : `failed (${r.error})`}`).join(" · ") || "—"}</td></tr>
+              <tr><td>Live sources fetched</td><td>{(stats.sources ?? []).map((r) => `${r.source} / ${r.city}: ${r.ok ? r.found : `failed (${r.error})`}`).join(", ") || "none"}</td></tr>
               <tr><td>Items collected from all sources</td><td>{stats.candidates_fetched ?? 0}</td></tr>
               <tr><td>Listed events inside the 30-day window</td><td>{stats.listed_in_window ?? 0}</td></tr>
               <tr><td>Web-search results collected</td><td>{stats.search_results ?? 0}</td></tr>
@@ -91,12 +153,12 @@ export default function DigestView({ digest, showRunDetails = true }: { digest: 
               <tr><td>Dropped: not relevant enough (score under 40)</td><td>{stats.dropped_low_relevance ?? 0}</td></tr>
               <tr><td>Duplicates merged</td><td>{stats.duplicates_merged}</td></tr>
               <tr><td>Events in digest</td><td>{stats.final} ({stats.flagged} flagged)</td></tr>
-              <tr><td>Events per source site</td><td>{Object.entries(stats.by_domain ?? {}).map(([d, n]) => `${d} (${n})`).join(", ") || "—"}</td></tr>
+              <tr><td>Events per source site</td><td>{Object.entries(stats.by_domain ?? {}).map(([d, n]) => `${d} (${n})`).join(", ") || "none"}</td></tr>
               <tr><td>Run time</td><td>{((stats.duration_ms ?? 0) / 1000).toFixed(1)}s</td></tr>
             </tbody>
           </table>
-        </details>
-      )}
-    </section>
+        </div>
+      </details>
+    </div>
   );
 }

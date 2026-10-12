@@ -12,10 +12,14 @@ export default async function DigestPage(props: { params: Promise<{ id: string }
   if (!digest) notFound();
 
   return (
-    <>
-      <h1>Weekly event digest</h1>
-      <p className="lede">This is the web copy of the email that was sent for this run.</p>
-      <DigestView digest={digest} />
-    </>
+    <div className="wrap">
+      <div className="page-top">
+        <h1>Weekly event digest</h1>
+        <p>The web copy of the email sent for this run.</p>
+      </div>
+      <section className="section">
+        <DigestView digest={digest} />
+      </section>
+    </div>
   );
 }

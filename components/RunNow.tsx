@@ -55,7 +55,7 @@ export default function RunNow({ token, autoStart }: { token: string; autoStart:
 
   return (
     <div className="run-now">
-      <button type="button" onClick={() => run("manual")} disabled={busy}>
+      <button type="button" className="button" onClick={() => run("manual")} disabled={busy}>
         {busy ? `Collecting and ranking events… ${seconds}s` : "Send my digest now"}
       </button>
       {busy && <p className="hint">Fetching live sources and ranking usually takes one to two minutes. Keep this tab open.</p>}

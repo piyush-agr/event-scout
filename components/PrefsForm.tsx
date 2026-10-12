@@ -66,7 +66,7 @@ function MultiSelect(props: {
             }
           }}
         />
-        <button type="button" className="secondary" onClick={addCustom}>
+        <button type="button" className="button quiet" onClick={addCustom}>
           Add
         </button>
       </div>
@@ -86,7 +86,7 @@ export default function PrefsForm(props: Props) {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!categories.length || !cities.length) {
-      setMessage({ kind: "error", text: "Pick at least one category and one city." });
+      setMessage({ kind: "error", text: "Pick at least one focus area and one city." });
       return;
     }
     setBusy(true);
@@ -104,7 +104,7 @@ export default function PrefsForm(props: Props) {
       else if (data.token) router.push(`/manage/${data.token}?welcome=1`);
       else if (data.existing) setMessage({ kind: "ok", text: data.message });
       else {
-        setMessage({ kind: "ok", text: "Saved. Your next digest will use these settings." });
+        setMessage({ kind: "ok", text: "Settings saved. Your next digest will use them." });
         router.refresh();
       }
     } catch {
@@ -115,7 +115,7 @@ export default function PrefsForm(props: Props) {
   }
 
   return (
-    <form onSubmit={submit} className="card">
+    <form onSubmit={submit} className="panel">
       {props.mode === "signup" && (
         <div className="row">
           <label className="field">
@@ -130,7 +130,7 @@ export default function PrefsForm(props: Props) {
       )}
       <MultiSelect
         label="Focus areas"
-        hint="Events are ranked by how closely they match these."
+        hint="Events are ranked by how closely they match what you pick here."
         options={props.categoryOptions}
         selected={categories}
         onChange={setCategories}
@@ -142,8 +142,8 @@ export default function PrefsForm(props: Props) {
         selected={cities}
         onChange={setCities}
       />
-      <button type="submit" disabled={busy}>
-        {busy ? "Saving…" : props.mode === "signup" ? "Sign up and get my first digest" : "Save settings"}
+      <button type="submit" className="button" disabled={busy}>
+        {busy ? "Saving…" : props.mode === "signup" ? "Sign up and send my first digest" : "Save settings"}
       </button>
       {message && <p className={`msg ${message.kind}`}>{message.text}</p>}
     </form>

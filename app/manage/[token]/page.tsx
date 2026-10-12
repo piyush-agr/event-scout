@@ -22,33 +22,44 @@ export default async function ManagePage(props: {
   const lastGood = latest && latest.status !== "ok" ? await latestGoodDigestFor(sub.id) : null;
 
   return (
-    <>
-      <h1>Hi {sub.name}</h1>
-      <p className="lede">
-        Your digest goes to <b>{sub.email}</b> every Monday at 7:00 AM IST. Bookmark this page: it is your private
-        settings link.
-      </p>
+    <div className="wrap">
+      <div className="page-top">
+        <h1>Hi {sub.name}</h1>
+        <p>
+          Your digest goes to <b>{sub.email}</b> every Monday at 7:00 AM IST. Bookmark this page. It is your private
+          settings link.
+        </p>
+        <RunNow token={sub.token} autoStart={welcome === "1" && !latest} />
+      </div>
 
-      <RunNow token={sub.token} autoStart={welcome === "1" && !latest} />
+      <section className="section">
+        <h2>Your settings</h2>
+        <p className="section-note">Changes apply from your next digest.</p>
+        <PrefsForm
+          mode="manage"
+          token={sub.token}
+          categoryOptions={CATEGORY_OPTIONS}
+          cityOptions={CITY_OPTIONS}
+          initialCategories={sub.categories}
+          initialCities={sub.cities}
+        />
+      </section>
 
-      <h2>Your settings</h2>
-      <PrefsForm
-        mode="manage"
-        token={sub.token}
-        categoryOptions={CATEGORY_OPTIONS}
-        cityOptions={CITY_OPTIONS}
-        initialCategories={sub.categories}
-        initialCities={sub.cities}
-      />
+      <section className="section">
+        <h2>Your latest digest</h2>
+        {latest ? (
+          <DigestView digest={latest} />
+        ) : (
+          <p className="msg">No digest yet. Press “Send my digest now” above to create one.</p>
+        )}
+      </section>
 
-      <h2>Your latest digest</h2>
-      {latest ? <DigestView digest={latest} /> : <p className="msg">No digest yet. Use the button above.</p>}
       {lastGood && (
-        <>
+        <section className="section">
           <h2>Previous successful digest</h2>
           <DigestView digest={lastGood} />
-        </>
+        </section>
       )}
-    </>
+    </div>
   );
 }

@@ -1,7 +1,7 @@
 import nodemailer from "nodemailer";
 import { WINDOW_DAYS } from "./config";
 import { formatDate } from "./dates";
-import { organizerPeopleSearch } from "./links";
+import { contactLinks, organizerPeopleSearch } from "./links";
 import type { Digest, ScoutEvent, Subscriber } from "./types";
 
 const esc = (s: string) =>
@@ -67,7 +67,9 @@ function eventBlock(e: ScoutEvent, rank: number): string {
           <div style="font-size:15px;color:#10233f;margin-top:10px;line-height:1.5;">${esc(e.summary)}</div>
           <div style="font-size:15px;color:#10233f;margin-top:8px;line-height:1.5;"><b>Why it fits:</b> ${esc(e.reason)}</div>
           ${e.audience ? `<div style="font-size:14px;color:#5a6678;margin-top:6px;line-height:1.45;"><b style="color:#10233f;">In the room:</b> ${esc(e.audience)}</div>` : ""}
-          <div style="font-size:14px;color:#5a6678;margin-top:6px;line-height:1.45;"><b style="color:#10233f;">Organiser:</b> ${esc(e.organizer ?? "not named on the listing")}${e.organizer_linkedin ? ` &nbsp;<a href="${esc(e.organizer_linkedin)}" style="color:#10233f;">LinkedIn page</a>` : ""} &nbsp;<a href="${esc(organizerPeopleSearch(e))}" style="color:#10233f;">Find the event team on LinkedIn</a></div>
+          <div style="font-size:14px;color:#5a6678;margin-top:6px;line-height:1.6;"><b style="color:#10233f;">Contact:</b> ${esc(e.contact?.name ?? e.organizer ?? "organiser not named")}${contactLinks(e).length ? "" : ", details not available on the listing"}${contactLinks(e)
+            .map((l) => ` &nbsp;<a href="${esc(l.href)}" style="color:#10233f;white-space:nowrap;">${esc(l.label)}</a>`)
+            .join("")} &nbsp;<a href="${esc(organizerPeopleSearch(e))}" style="color:#10233f;white-space:nowrap;">Search LinkedIn for the event team</a></div>
           ${d.urgent ? "" : `<div style="font-size:13px;color:#5a6678;margin-top:8px;">${e.deadline ? `Registration closes <b style="color:#10233f;">${esc(formatDate(e.deadline))}</b>` : "No registration deadline listed"}</div>`}
           <div style="font-size:12px;color:#5a6678;margin-top:8px;">Found on <a href="${esc(e.url)}" style="color:#5a6678;">${esc(e.source_domain)}</a>${e.other_sources
             .slice(0, 2)

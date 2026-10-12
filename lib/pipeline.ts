@@ -3,6 +3,7 @@ import { addDays, daysBetween, isIsoDate, todayIST } from "./dates";
 import { db } from "./db";
 import { sendDigestEmail } from "./email";
 import { assessEvents, ListedAssessmentSchema, SearchEventSchema } from "./gemini";
+import { addEventContacts } from "./contact";
 import { addOrganizerLinkedIn } from "./lusha";
 import { fetchCandidates, type Candidate } from "./sources";
 import type { Digest, RunStats, ScoutEvent, Subscriber } from "./types";
@@ -251,7 +252,9 @@ export async function collectEvents(sub: Pick<Subscriber, "categories" | "cities
     .sort((a, b) => b.score - a.score || a.start_date.localeCompare(b.start_date))
     .slice(0, MAX_EVENTS);
 
-  // 6. ORGANISER CONTACT — LinkedIn company page for each organiser (Lusha, cached).
+  // 6. ORGANISER CONTACT — details published on the event and organiser pages (free),
+  //    then a LinkedIn company page from Lusha's free credits where the pages had none.
+  stats.contacts = await addEventContacts(ranked);
   stats.organizers = await addOrganizerLinkedIn(ranked);
 
   for (const ev of ranked) stats.by_domain[ev.source_domain] = (stats.by_domain[ev.source_domain] ?? 0) + 1;

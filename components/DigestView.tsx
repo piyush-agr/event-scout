@@ -1,6 +1,6 @@
 import { formatDate, formatDateTimeIST } from "@/lib/dates";
 import { deadlineLabel, placeLine, priceLabel } from "@/lib/email";
-import { organizerPeopleSearch } from "@/lib/links";
+import { contactLinks, organizerPeopleSearch } from "@/lib/links";
 import type { Digest, ScoutEvent } from "@/lib/types";
 
 const isFlagged = (e: ScoutEvent) => e.deadline_status === "urgent" || e.deadline_status === "event_soon";
@@ -12,7 +12,9 @@ function stubParts(date: string) {
   return { day: part({ day: "numeric" }), month: part({ month: "short" }), weekday: part({ weekday: "short" }) };
 }
 
-function Ticket({ event: e, rank }: { event: ScoutEvent; rank: number }) {
+function Ticket({ event: e, rank, direct }: { event: ScoutEvent; rank: number; direct: boolean }) {
+  const links = contactLinks(e, direct);
+  const hidden = !direct && (e.contact?.email || e.contact?.phone);
   const d = deadlineLabel(e);
   const start = stubParts(e.start_date);
   const end = e.end_date ? stubParts(e.end_date) : null;
@@ -60,14 +62,16 @@ function Ticket({ event: e, rank }: { event: ScoutEvent; rank: number }) {
           </p>
         )}
         <p className="organiser">
-          <b>Organiser:</b> {e.organizer ?? "not named on the listing"}
-          {e.organizer_linkedin && (
-            <a href={e.organizer_linkedin} target="_blank" rel="noopener noreferrer">
-              LinkedIn page
+          <b>Contact:</b> {e.contact?.name ?? e.organizer ?? "organiser not named"}
+          {links.length === 0 && !hidden && <span className="na">, details not available on the listing</span>}
+          {links.map((l) => (
+            <a key={l.href} href={l.href} target="_blank" rel="noopener noreferrer">
+              {l.label}
             </a>
-          )}
+          ))}
+          {hidden && <span className="na"> (email or phone is in the digest email)</span>}
           <a href={organizerPeopleSearch(e)} target="_blank" rel="noopener noreferrer">
-            Find the event team on LinkedIn
+            Search LinkedIn for the event team
           </a>
         </p>
         {!d.urgent &&
@@ -97,7 +101,15 @@ function Ticket({ event: e, rank }: { event: ScoutEvent; rank: number }) {
 const STARTED_BY: Record<string, string> = { cron: "Monday schedule", signup: "sign-up", manual: "Send now button" };
 
 /** The digest as a web page — same content and order as the email. */
-export default function DigestView({ digest, showAlert = true }: { digest: Digest; showAlert?: boolean }) {
+export default function DigestView({
+  digest,
+  showAlert = true,
+  publicView = false,
+}: {
+  digest: Digest;
+  showAlert?: boolean;
+  publicView?: boolean; // the home page: leave out organisers' email and phone
+}) {
   const { events, stats } = digest;
   const flagged = events.filter(isFlagged);
   const emailed = digest.email_status === "sent";
@@ -141,7 +153,7 @@ export default function DigestView({ digest, showAlert = true }: { digest: Diges
 
       <ol className="tickets">
         {events.map((e, i) => (
-          <Ticket key={e.url + e.title} event={e} rank={i + 1} />
+          <Ticket key={e.url + e.title} event={e} rank={i + 1} direct={!publicView} />
         ))}
       </ol>
 
@@ -166,7 +178,8 @@ export default function DigestView({ digest, showAlert = true }: { digest: Diges
               <tr><td>Duplicates merged</td><td>{stats.duplicates_merged}</td></tr>
               <tr><td>Events in digest</td><td>{stats.final} ({stats.flagged} flagged)</td></tr>
               <tr><td>Events per source site</td><td>{Object.entries(stats.by_domain ?? {}).map(([d, n]) => `${d} (${n})`).join(", ") || "none"}</td></tr>
-              <tr><td>Organiser LinkedIn pages</td><td>{stats.organizers ? `${stats.organizers.from_cache} from cache, ${stats.organizers.looked_up} new lookups${stats.organizers.error ? ` (${stats.organizers.error})` : ""}` : "not run"}</td></tr>
+              <tr><td>Organiser contact found on event pages</td><td>{stats.contacts ? `${stats.contacts.with_contact} of ${stats.contacts.checked} events` : "not run"}</td></tr>
+              <tr><td>Organiser LinkedIn pages (Lusha free credits)</td><td>{stats.organizers ? `${stats.organizers.from_cache} from cache, ${stats.organizers.looked_up} new lookups${stats.organizers.error ? ` (${stats.organizers.error})` : ""}` : "not run"}</td></tr>
               <tr><td>Run time</td><td>{((stats.duration_ms ?? 0) / 1000).toFixed(1)}s</td></tr>
             </tbody>
           </table>

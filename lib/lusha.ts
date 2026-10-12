@@ -38,7 +38,15 @@ async function lookupCompany(name: string): Promise<{ linkedin_url: string | nul
  */
 export async function addOrganizerLinkedIn(events: ScoutEvent[]): Promise<{ from_cache: number; looked_up: number; error?: string }> {
   const report: { from_cache: number; looked_up: number; error?: string } = { from_cache: 0, looked_up: 0 };
-  const names = [...new Set(events.map((e) => e.organizer).filter((n): n is string => !!n && n.length > 2))];
+  // Skip organisers whose own page already gave us a LinkedIn link.
+  const names = [
+    ...new Set(
+      events
+        .filter((e) => !e.contact?.linkedin)
+        .map((e) => e.organizer)
+        .filter((n): n is string => !!n && n.length > 2),
+    ),
+  ];
   if (names.length === 0) return report;
 
   const known = new Map<string, string | null>();

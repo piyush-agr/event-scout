@@ -94,7 +94,7 @@ export default async function Home() {
                 {latest.subscribers ? maskEmail(latest.subscribers.email) : "a subscriber"}. Entries marked in red need action
                 within 7 days. <Link href={`/digest/${latest.id}`}>Open on its own page</Link>
               </p>
-              <DigestView digest={latest} showAlert={false} />
+              <DigestView digest={latest} showAlert={false} publicView />
             </>
           ) : (
             <p className="msg">No digest yet. Sign up above and the first one appears here.</p>

@@ -11,6 +11,16 @@ export type Subscriber = {
 
 export type DeadlineStatus = "urgent" | "event_soon" | "ok" | "unknown";
 
+// Contact details the organiser published on the event page or their organiser profile.
+export type EventContact = {
+  name: string | null;
+  profile_url: string | null; // organiser's page on the listing platform
+  email: string | null;
+  phone: string | null;
+  linkedin: string | null;
+  website: string | null;
+};
+
 export type ScoutEvent = {
   title: string;
   start_date: string;
@@ -20,6 +30,7 @@ export type ScoutEvent = {
   format: "in_person" | "hybrid" | "online" | "unknown";
   organizer: string | null;
   organizer_linkedin?: string | null; // organiser's LinkedIn company page, from Lusha
+  contact?: EventContact;
   audience: string | null;
   summary: string;
   price: string | null;
@@ -54,6 +65,7 @@ export type RunStats = {
   flagged: number;
   by_domain: Record<string, number>;
   organizers?: { from_cache: number; looked_up: number; error?: string }; // LinkedIn lookups for organisers
+  contacts?: { checked: number; with_contact: number }; // events whose pages published a contact
   duration_ms: number;
   error?: string;
 };

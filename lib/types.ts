@@ -28,7 +28,7 @@ export type ScoutEvent = {
   deadline: string | null;
   deadline_status: DeadlineStatus;
   days_left: number | null; // days until registration deadline (or until the event if deadline unknown)
-  url: string; // always a URL returned by Google Search grounding
+  url: string; // always the page the event was fetched from
   source_domain: string;
   other_sources: { url: string; domain: string }[];
 };

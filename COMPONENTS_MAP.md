@@ -6,7 +6,7 @@ This file is the detail behind the diagram.
 
 ## 1. Summary
 
-Event Scout emails each subscriber a ranked list of in-person professional events in their chosen Indian cities for the next 30 days. A Vercel Cron job starts a run every Monday at 7:00 AM IST (subscribers can also start one on demand). The app fetches live event listings from Eventbrite, AllEvents, Meetup and Luma for each city, plus web-search results that cover conference sites, industry bodies and public LinkedIn posts. Code filters by date and merges duplicates. Gemini Flash then judges each event, scores it against the subscriber's focus areas, writes the summary, and extracts dated events from search snippets. Code validates the AI output, ranks, and flags registration deadlines. The digest is stored in Supabase, emailed through Gmail SMTP, and shown on the web dashboard.
+Event Scout emails each subscriber a ranked list of in-person professional events in their chosen Indian cities for the next 30 days. A Vercel Cron job starts a run every Monday at 7:00 AM IST (subscribers can also start one on demand). The app fetches live event listings from Eventbrite, AllEvents, Meetup and Luma for each city, plus web-search results that cover conference sites, industry bodies and public LinkedIn posts. Code filters by date and merges duplicates. Gemini Flash then judges each event, scores it against the subscriber's focus areas, writes the summary, and extracts dated events from search snippets. Code validates the AI output, ranks, flags registration deadlines, and adds the organiser's published contact details (with a Lusha lookup for a LinkedIn company page where the pages give none). The digest is stored in Supabase, emailed through Gmail SMTP, and shown on the web dashboard.
 
 ## 2. Data flow
 
@@ -24,8 +24,9 @@ flowchart LR
   V --> F[Drop online-only and low relevance]
   F --> R[Rank, keep top 15]
   R --> FL[Flag deadlines under 7 days]
-  FL --> DB
-  FL --> EM[Gmail SMTP] --> INBOX[Subscriber inbox]
+  FL --> C[Organiser contact:<br/>event page + organiser profile,<br/>Lusha for LinkedIn fallback]
+  C --> DB
+  C --> EM[Gmail SMTP] --> INBOX[Subscriber inbox]
   DB --> DASH[Dashboard + digest pages]
 ```
 
@@ -50,7 +51,7 @@ flowchart LR
 | Organiser contact | Service | For each event in the digest, read the event page and the organiser's profile page and keep the contact details they publish: name, email, phone, LinkedIn, website, organiser page | Final events | `contact` on each event | `fetch` + schema.org and pattern parsing, no paid service | `lib/contact.ts`, `lib/links.ts` | R9 |
 | Organiser LinkedIn fallback | External API | Where the pages gave no LinkedIn link, look up the organiser's company page | Organiser names | LinkedIn company URL | Lusha free credits, cached in Supabase `organizers`, max 3 new lookups per run | `lib/lusha.ts` | R9 |
 | Email | Service | Render and send the digest | Digest | Email | Nodemailer + Gmail SMTP | `lib/email.ts` | R1, R8, R11 |
-| Database | Database | Subscribers, digests, run logs | — | — | Supabase Postgres | `lib/db.ts`, `supabase/schema.sql` | R10 |
+| Database | Database | Subscribers, digests, run logs, organiser lookup cache | — | — | Supabase Postgres | `lib/db.ts`, `supabase/schema.sql` | R10 |
 | Date helpers | Service | IST dates, day differences | — | — | TypeScript | `lib/dates.ts` | R3, R11 |
 
 ## 4. AI components

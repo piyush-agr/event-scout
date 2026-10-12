@@ -27,11 +27,11 @@ Every Monday at 7:00 AM IST it collects conferences, CXO summits, roundtables an
 | R4 | Aggregated from many sources | `lib/sources.ts` | "Source" line per event; "Live sources fetched" in run log |
 | R5 | Filtered by domains | `assessEvents` + score cut-off in `lib/pipeline.ts` | Category per event; "Dropped: not relevant enough" in run log |
 | R6 | Filtered by cities | `lib/sources.ts` (fetches only chosen cities) | City per event; sources listed per city in run log |
-| R7 | Ranked by match | `assessEvents` + sort | "#1 · Match 92/100" and "Why it fits" per event |
+| R7 | Ranked by match | `assessEvents` + sort | "Rank 1" and "92 match" tags and "Why it fits" per event |
 | R8 | Scannable in 5 minutes | `lib/email.ts`, `components/DigestView.tsx` | One compact card per event |
-| R9 | Enough context to decide | same | Date, venue, price, summary, audience, reason, link |
+| R9 | Enough context to decide | same, plus `lib/contact.ts` | Date, venue, price, summary, audience, reason, organiser contact, link |
 | R10 | Configurable without code | `components/PrefsForm.tsx`, settings page | Private settings link |
-| R11 | Deadline under 7 days flagged | `lib/pipeline.ts` `withDeadline` | Red flag on the event and "Act this week" box |
+| R11 | Deadline under 7 days flagged | `lib/pipeline.ts` `withDeadline` | Orange banner and date on the event; "to act on this week" panel |
 | E1 | Gemini Flash only | `lib/gemini.ts` | Model name in run log; no other AI SDK in `package.json` |
 | E2 | Live data, nothing hardcoded | whole pipeline | Timestamps and source links on each digest |
 | E3 | Deployed on Vercel | — | Live URL |
@@ -57,7 +57,7 @@ npm run dev
 | `LUSHA_API_KEY` | Optional. Finds each organiser's LinkedIn company page |
 | `CRON_SECRET` | Random string; Vercel Cron sends it as a Bearer token |
 
-Database schema: two tables, `subscribers` and `digests` (see `supabase/schema.sql`).
+Database schema: three tables, `subscribers`, `digests` and `organizers` (see `supabase/schema.sql`).
 
 ## Deploy
 

@@ -93,15 +93,15 @@
   <foreignObject x="1295" y="790" width="225" height="125"><div xmlns="http://www.w3.org/1999/xhtml" class="box" style="font-size:13.5px">Judges each event, scores match 0–100 with a reason, writes the summary, extracts dated events from search snippets</div></foreignObject>
 
   <rect x="1030" y="640" width="225" height="115" rx="10" fill="#fdecc8" stroke="#f0a020" stroke-width="2"/>
-  <foreignObject x="1030" y="640" width="225" height="115"><div xmlns="http://www.w3.org/1999/xhtml" class="box" style="font-size:13.5px">Validates AI records, drops anything not tied to a fetched page, ranks, flags deadlines under 7 days, saves digest</div></foreignObject>
+  <foreignObject x="1030" y="640" width="225" height="115"><div xmlns="http://www.w3.org/1999/xhtml" class="box" style="font-size:12.5px;line-height:1.25">Validates AI records, drops anything not tied to a fetched page, ranks, flags deadlines under 7 days, adds organiser contact from event pages (+ Lusha for LinkedIn), saves digest</div></foreignObject>
 
   <rect x="1030" y="960" width="225" height="100" rx="10" fill="#dcecfc" stroke="#1d6fd6" stroke-width="2"/>
   <foreignObject x="1030" y="960" width="225" height="100"><div xmlns="http://www.w3.org/1999/xhtml" class="box">Sends the digest email to each subscriber</div></foreignObject>
 
   <rect x="1560" y="170" width="225" height="135" rx="10" fill="#fde2df" stroke="#e03a2f" stroke-width="2"/>
-  <foreignObject x="1560" y="170" width="225" height="135"><div xmlns="http://www.w3.org/1999/xhtml" class="box" style="font-size:13.5px">Monday email: ranked events with context, red flag if registration closes in under 7 days. Same digest + run log on the web dashboard</div></foreignObject>
+  <foreignObject x="1560" y="170" width="225" height="135"><div xmlns="http://www.w3.org/1999/xhtml" class="box" style="font-size:13px;line-height:1.25">Monday email: ranked events with context and organiser contact, red flag if registration closes in under 7 days. Same digest + run log on the web dashboard</div></foreignObject>
 </svg>
 </div>
-<p class="note">AI (Gemini Flash) is used for one step: judging, scoring and summarising events. Fetching, date filtering, de-duplication, the “tied to a real page” check, ranking order and deadline flags are ordinary code. Full detail: COMPONENTS_MAP.md in the GitHub repo.</p>
+<p class="note">AI (Gemini Flash) is used for one step: judging, scoring and summarising events. Fetching, date filtering, de-duplication, the “tied to a real page” check, ranking order, deadline flags and organiser contact lookup are ordinary code. Full detail: COMPONENTS_MAP.md in the GitHub repo.</p>
 </body>
 </html>

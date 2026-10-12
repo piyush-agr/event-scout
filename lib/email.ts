@@ -1,6 +1,7 @@
 import nodemailer from "nodemailer";
 import { WINDOW_DAYS } from "./config";
 import { formatDate } from "./dates";
+import { organizerPeopleSearch } from "./links";
 import type { Digest, ScoutEvent, Subscriber } from "./types";
 
 const esc = (s: string) =>
@@ -42,12 +43,12 @@ function eventBlock(e: ScoutEvent, rank: number): string {
   const d = deadlineLabel(e);
   const date = new Date(`${e.start_date}T00:00:00Z`);
   const part = (o: Intl.DateTimeFormatOptions) => date.toLocaleDateString("en-IN", { ...o, timeZone: "UTC" });
-  const stub = d.urgent ? "#d92d3a" : "#3b4cf0";
-  const scoreBg = e.score >= 80 ? "#ffb703" : e.score >= 60 ? "#fff1c2" : "#f3f4fa";
+  const stub = d.urgent ? "#b3261e" : "#10233f";
+  const scoreBg = e.score >= 80 ? "#f6ebd0" : "#eef0f4";
   const until = e.end_date ? `<div style="font-size:11px;margin-top:6px;">to ${esc(formatDate(e.end_date).replace(/^\w+, /, "").replace(/,? \d{4}$/, ""))}</div>` : "";
   return `
   <tr><td style="padding:0 0 14px 0;">
-    <table width="100%" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:14px;overflow:hidden;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:6px;overflow:hidden;border:1px solid #d9dee7;">
       <tr>
         <td width="84" valign="top" align="center" style="background:${stub};color:#ffffff;padding:16px 4px;font-family:Arial,Helvetica,sans-serif;">
           <div style="font-size:32px;line-height:1;font-weight:bold;">${part({ day: "numeric" })}</div>
@@ -55,21 +56,22 @@ function eventBlock(e: ScoutEvent, rank: number): string {
           <div style="font-size:12px;">${part({ weekday: "short" })}</div>${until}
         </td>
         <td valign="top" style="padding:14px 18px 16px 18px;font-family:Arial,Helvetica,sans-serif;">
-          <div style="font-size:12px;color:#5b6185;margin-bottom:6px;">
+          <div style="font-size:12px;color:#5a6678;margin-bottom:6px;">
             <b style="font-size:14px;">#${rank}</b>&nbsp;
-            <span style="background:${scoreBg};color:#161a3a;border-radius:20px;padding:3px 9px;"><b>${e.score}</b> match</span>&nbsp;
-            <span style="background:#e8eaff;color:#2530a8;border-radius:20px;padding:3px 9px;">${esc(e.category)}</span>
+            <span style="background:${scoreBg};color:#10233f;border-radius:4px;padding:3px 9px;"><b>${e.score}</b> match</span>&nbsp;
+            <span style="background:#eef0f4;color:#10233f;border-radius:4px;padding:3px 9px;">${esc(e.category)}</span>
           </div>
-          <a href="${esc(e.url)}" style="font-size:19px;line-height:1.25;font-weight:bold;color:#161a3a;text-decoration:none;">${esc(e.title)}</a>
-          <div style="font-size:14px;color:#5b6185;margin-top:4px;">${esc(placeLine(e))}${e.price ? ` &nbsp;<span style="background:${e.price === "Free" ? "#ddf5f0" : "#f3f4fa"};color:${e.price === "Free" ? "#075e53" : "#161a3a"};border-radius:6px;padding:1px 7px;font-size:13px;">${esc(priceLabel(e.price))}</span>` : ""}</div>
-          ${d.urgent ? `<div style="margin-top:10px;"><span style="display:inline-block;background:#d92d3a;color:#ffffff;font-size:14px;font-weight:bold;padding:6px 11px;border-radius:8px;">${esc(d.text)}</span></div>` : ""}
-          <div style="font-size:15px;color:#161a3a;margin-top:10px;line-height:1.5;">${esc(e.summary)}</div>
-          <div style="font-size:15px;color:#161a3a;margin-top:8px;line-height:1.5;"><span style="background:#fff1c2;font-weight:bold;padding:1px 6px;border-radius:4px;">Why it fits</span> ${esc(e.reason)}</div>
-          ${e.audience ? `<div style="font-size:14px;color:#5b6185;margin-top:6px;line-height:1.45;"><b style="color:#161a3a;">In the room:</b> ${esc(e.audience)}</div>` : ""}
-          ${d.urgent ? "" : `<div style="font-size:13px;color:#5b6185;margin-top:8px;">${e.deadline ? `Registration closes <b style="color:#161a3a;">${esc(formatDate(e.deadline))}</b>` : "No registration deadline listed"}</div>`}
-          <div style="font-size:12px;color:#5b6185;margin-top:8px;">Found on <a href="${esc(e.url)}" style="color:#5b6185;">${esc(e.source_domain)}</a>${e.other_sources
+          <a href="${esc(e.url)}" style="font-size:19px;line-height:1.25;font-weight:bold;color:#10233f;text-decoration:none;">${esc(e.title)}</a>
+          <div style="font-size:14px;color:#5a6678;margin-top:4px;">${esc(placeLine(e))}${e.price ? ` &nbsp;<span style="background:${e.price === "Free" ? "#ddf5f0" : "#f3f4fa"};color:${e.price === "Free" ? "#075e53" : "#10233f"};border-radius:6px;padding:1px 7px;font-size:13px;">${esc(priceLabel(e.price))}</span>` : ""}</div>
+          ${d.urgent ? `<div style="margin-top:10px;"><span style="display:inline-block;background:#fbeceb;color:#b3261e;font-size:14px;font-weight:bold;padding:6px 11px;border-radius:4px;">${esc(d.text)}</span></div>` : ""}
+          <div style="font-size:15px;color:#10233f;margin-top:10px;line-height:1.5;">${esc(e.summary)}</div>
+          <div style="font-size:15px;color:#10233f;margin-top:8px;line-height:1.5;"><b>Why it fits:</b> ${esc(e.reason)}</div>
+          ${e.audience ? `<div style="font-size:14px;color:#5a6678;margin-top:6px;line-height:1.45;"><b style="color:#10233f;">In the room:</b> ${esc(e.audience)}</div>` : ""}
+          <div style="font-size:14px;color:#5a6678;margin-top:6px;line-height:1.45;"><b style="color:#10233f;">Organiser:</b> ${esc(e.organizer ?? "not named on the listing")}${e.organizer_linkedin ? ` &nbsp;<a href="${esc(e.organizer_linkedin)}" style="color:#10233f;">LinkedIn page</a>` : ""} &nbsp;<a href="${esc(organizerPeopleSearch(e))}" style="color:#10233f;">Find the event team on LinkedIn</a></div>
+          ${d.urgent ? "" : `<div style="font-size:13px;color:#5a6678;margin-top:8px;">${e.deadline ? `Registration closes <b style="color:#10233f;">${esc(formatDate(e.deadline))}</b>` : "No registration deadline listed"}</div>`}
+          <div style="font-size:12px;color:#5a6678;margin-top:8px;">Found on <a href="${esc(e.url)}" style="color:#5a6678;">${esc(e.source_domain)}</a>${e.other_sources
             .slice(0, 2)
-            .map((s) => `, <a href="${esc(s.url)}" style="color:#5b6185;">${esc(s.domain)}</a>`)
+            .map((s) => `, <a href="${esc(s.url)}" style="color:#5a6678;">${esc(s.domain)}</a>`)
             .join("")}</div>
         </td>
       </tr>
@@ -84,11 +86,11 @@ export function renderDigestEmail(sub: Subscriber, digest: Digest, baseUrl: stri
     `Event Scout: ${events.length} event${events.length === 1 ? "" : "s"} in the next ${WINDOW_DAYS} days` +
     (flagged.length ? ` — ${flagged.length} to act on this week` : "");
 
-  const html = `<!doctype html><html><body style="margin:0;background:#f3f4fa;font-family:Arial,Helvetica,sans-serif;color:#161a3a;">
-<table width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4fa;"><tr><td align="center" style="padding:20px 10px;">
+  const html = `<!doctype html><html><body style="margin:0;background:#f4f5f7;font-family:Arial,Helvetica,sans-serif;color:#10233f;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f5f7;"><tr><td align="center" style="padding:20px 10px;">
 <table width="640" cellpadding="0" cellspacing="0" style="max-width:640px;">
-  <tr><td style="background:#161a3a;border-radius:14px;padding:24px;color:#ffffff;">
-    <div style="font-size:14px;font-weight:bold;color:#ffb703;">Event Scout</div>
+  <tr><td style="background:#10233f;border-radius:6px;padding:26px;color:#ffffff;">
+    <div style="font-size:14px;font-weight:bold;color:#d9b25f;">Event Scout weekly briefing</div>
     <div style="font-size:26px;line-height:1.15;font-weight:bold;margin-top:6px;">${events.length} events worth your time</div>
     <div style="font-size:15px;color:#c9cdf2;margin-top:8px;line-height:1.5;">Hi ${esc(sub.name)}. ${formatDate(digest.stats.window.from)} to ${formatDate(digest.stats.window.to)}, ranked by how closely they match your focus areas.</div>
     <div style="font-size:13px;color:#c9cdf2;margin-top:10px;line-height:1.5;"><b style="color:#ffffff;">Cities:</b> ${esc(sub.cities.join(", "))}<br><b style="color:#ffffff;">Focus:</b> ${esc(sub.categories.join(", "))}</div>
@@ -96,17 +98,17 @@ export function renderDigestEmail(sub: Subscriber, digest: Digest, baseUrl: stri
   <tr><td style="height:14px;line-height:14px;font-size:0;">&nbsp;</td></tr>
   ${
     flagged.length
-      ? `<tr><td style="background:#ffe9e7;border-radius:14px;padding:16px 18px;">
-      <div style="font-size:16px;font-weight:bold;color:#9c1620;">Act this week (${flagged.length})</div>
-      ${flagged.map((e) => `<div style="font-size:14px;color:#161a3a;margin-top:6px;line-height:1.4;"><a href="${esc(e.url)}" style="color:#9c1620;font-weight:bold;">${esc(e.title)}</a>: ${esc(deadlineLabel(e).text)}</div>`).join("")}
+      ? `<tr><td style="background:#ffffff;border:1px solid #d9dee7;border-left:3px solid #b3261e;border-radius:6px;padding:16px 18px;">
+      <div style="font-size:16px;font-weight:bold;color:#b3261e;">Act this week (${flagged.length})</div>
+      ${flagged.map((e) => `<div style="font-size:14px;color:#10233f;margin-top:6px;line-height:1.4;"><a href="${esc(e.url)}" style="color:#10233f;font-weight:bold;">${esc(e.title)}</a>: ${esc(deadlineLabel(e).text)}</div>`).join("")}
     </td></tr><tr><td style="height:14px;line-height:14px;font-size:0;">&nbsp;</td></tr>`
       : ""
   }
   ${events.map((e, i) => eventBlock(e, i + 1)).join("")}
-  <tr><td style="padding:6px 4px 0 4px;font-size:12px;color:#5b6185;line-height:1.6;">
+  <tr><td style="padding:6px 4px 0 4px;font-size:12px;color:#5a6678;line-height:1.6;">
     Collected today from ${Object.keys(digest.stats.by_domain).length} websites and ranked by Gemini. Every link is the page the event was found on. Confirm dates on the event page before you register.<br><br>
-    <a href="${baseUrl}/digest/${digest.id}" style="color:#3b4cf0;font-weight:bold;">View in browser</a> &nbsp;|&nbsp;
-    <a href="${baseUrl}/manage/${sub.token}" style="color:#3b4cf0;font-weight:bold;">Change your cities and focus areas</a>
+    <a href="${baseUrl}/digest/${digest.id}" style="color:#10233f;font-weight:bold;">View in browser</a> &nbsp;|&nbsp;
+    <a href="${baseUrl}/manage/${sub.token}" style="color:#10233f;font-weight:bold;">Change your cities and focus areas</a>
   </td></tr>
 </table></td></tr></table></body></html>`;
   return { subject, html };

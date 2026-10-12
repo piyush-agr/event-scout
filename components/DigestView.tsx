@@ -1,5 +1,6 @@
 import { formatDate, formatDateTimeIST } from "@/lib/dates";
 import { deadlineLabel, placeLine, priceLabel } from "@/lib/email";
+import { organizerPeopleSearch } from "@/lib/links";
 import type { Digest, ScoutEvent } from "@/lib/types";
 
 const isFlagged = (e: ScoutEvent) => e.deadline_status === "urgent" || e.deadline_status === "event_soon";
@@ -35,6 +36,7 @@ function Ticket({ event: e, rank }: { event: ScoutEvent; rank: number }) {
           <span className="rank">#{rank}</span>
           <span className={`score ${tier}`}>
             <b>{e.score}</b> match
+            <i style={{ "--v": `${e.score}%` } as React.CSSProperties} aria-hidden="true" />
           </span>
           <span className="tag">{e.category}</span>
         </div>
@@ -50,14 +52,24 @@ function Ticket({ event: e, rank }: { event: ScoutEvent; rank: number }) {
         {d.urgent && <p className="deadline urgent">{d.text}</p>}
         <p className="summary">{e.summary}</p>
         <p className="fit">
-          <mark>Why it fits</mark>
-          {e.reason}
+          <b>Why it fits:</b> {e.reason}
         </p>
         {e.audience && (
           <p className="who">
             <b>In the room:</b> {e.audience}
           </p>
         )}
+        <p className="organiser">
+          <b>Organiser:</b> {e.organizer ?? "not named on the listing"}
+          {e.organizer_linkedin && (
+            <a href={e.organizer_linkedin} target="_blank" rel="noopener noreferrer">
+              LinkedIn page
+            </a>
+          )}
+          <a href={organizerPeopleSearch(e)} target="_blank" rel="noopener noreferrer">
+            Find the event team on LinkedIn
+          </a>
+        </p>
         {!d.urgent &&
           (e.deadline ? (
             <p className="deadline known">
@@ -120,7 +132,7 @@ export default function DigestView({ digest, showAlert = true }: { digest: Diges
           <ul>
             {flagged.map((e) => (
               <li key={e.url + e.title}>
-                <b>{e.title}</b>: {deadlineLabel(e).text}
+                <b>{e.title}</b> <span>{deadlineLabel(e).text}</span>
               </li>
             ))}
           </ul>
@@ -154,6 +166,7 @@ export default function DigestView({ digest, showAlert = true }: { digest: Diges
               <tr><td>Duplicates merged</td><td>{stats.duplicates_merged}</td></tr>
               <tr><td>Events in digest</td><td>{stats.final} ({stats.flagged} flagged)</td></tr>
               <tr><td>Events per source site</td><td>{Object.entries(stats.by_domain ?? {}).map(([d, n]) => `${d} (${n})`).join(", ") || "none"}</td></tr>
+              <tr><td>Organiser LinkedIn pages</td><td>{stats.organizers ? `${stats.organizers.from_cache} from cache, ${stats.organizers.looked_up} new lookups${stats.organizers.error ? ` (${stats.organizers.error})` : ""}` : "not run"}</td></tr>
               <tr><td>Run time</td><td>{((stats.duration_ms ?? 0) / 1000).toFixed(1)}s</td></tr>
             </tbody>
           </table>

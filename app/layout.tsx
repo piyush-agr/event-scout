@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { Atkinson_Hyperlegible, Bricolage_Grotesque } from "next/font/google";
+import { IBM_Plex_Sans, Newsreader } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
 
-const display = Bricolage_Grotesque({ subsets: ["latin"], variable: "--font-display" });
-const body = Atkinson_Hyperlegible({ subsets: ["latin"], weight: ["400", "700"], variable: "--font-body" });
+const display = Newsreader({ subsets: ["latin"], variable: "--font-display" });
+const body = IBM_Plex_Sans({ subsets: ["latin"], weight: ["400", "500", "600"], variable: "--font-body" });
 
 export const metadata: Metadata = {
   title: "Event Scout — weekly event digest",
@@ -18,8 +18,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <header className="site-header">
           <div className="wrap">
             <Link href="/" className="brand">
-              <span className="brand-mark" aria-hidden="true" />
-              Event Scout
+              Event Scout <small>Weekly event briefing</small>
             </Link>
             <nav>
               <Link href="/#latest">Latest digest</Link>

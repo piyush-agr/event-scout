@@ -29,3 +29,15 @@ create policy "server access" on public.subscribers for all to anon using (true)
 create policy "server access" on public.digests for all to anon using (true) with check (true);
 grant all on public.subscribers to anon;
 grant all on public.digests to anon;
+
+-- Organiser lookups (Lusha) are cached so each organiser costs one credit, once.
+create table public.organizers (
+  name_key text primary key,          -- lower-cased organiser name
+  name text not null,
+  linkedin_url text,                  -- company page, null when not found
+  domain text,
+  checked_at timestamptz not null default now()
+);
+alter table public.organizers enable row level security;
+create policy "server access" on public.organizers for all to anon using (true) with check (true);
+grant all on public.organizers to anon;

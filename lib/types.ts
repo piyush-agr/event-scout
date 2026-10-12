@@ -19,6 +19,7 @@ export type ScoutEvent = {
   venue: string | null;
   format: "in_person" | "hybrid" | "online" | "unknown";
   organizer: string | null;
+  organizer_linkedin?: string | null; // organiser's LinkedIn company page, from Lusha
   audience: string | null;
   summary: string;
   price: string | null;
@@ -52,6 +53,7 @@ export type RunStats = {
   final: number;
   flagged: number;
   by_domain: Record<string, number>;
+  organizers?: { from_cache: number; looked_up: number; error?: string }; // LinkedIn lookups for organisers
   duration_ms: number;
   error?: string;
 };

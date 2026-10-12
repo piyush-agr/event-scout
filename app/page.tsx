@@ -38,10 +38,10 @@ export default async function Home() {
               next 30 days. Ranked for your focus areas, in your cities.
             </p>
             <div className="hero-actions">
-              <a className="button gold" href="#signup">
+              <a className="button" href="#signup">
                 Get my digest
               </a>
-              <a className="button ghost" href="#latest">
+              <a className="button outline" href="#latest">
                 See the latest digest
               </a>
             </div>
@@ -76,6 +76,8 @@ export default async function Home() {
 
       <div className="wrap">
         <div className="signup" id="signup">
+          <h2 className="signup-title">Set up your briefing</h2>
+          <p className="signup-note">Choose what you advise on and where you travel. You can change both at any time.</p>
           <PrefsForm mode="signup" categoryOptions={CATEGORY_OPTIONS} cityOptions={CITY_OPTIONS} />
           <p className="after-form">
             Your first digest arrives in about two minutes. Every email carries a private link to change your cities
@@ -89,7 +91,7 @@ export default async function Home() {
             <>
               <p className="section-note">
                 Live data from the most recent run, for{" "}
-                {latest.subscribers ? maskEmail(latest.subscribers.email) : "a subscriber"}. Red tickets need action
+                {latest.subscribers ? maskEmail(latest.subscribers.email) : "a subscriber"}. Entries marked in red need action
                 within 7 days. <Link href={`/digest/${latest.id}`}>Open on its own page</Link>
               </p>
               <DigestView digest={latest} showAlert={false} />
@@ -148,7 +150,7 @@ export default async function Home() {
 
         <section className="section">
           <h2>How it works</h2>
-          <p className="section-note">The gold step is the only one that uses AI. Everything else is ordinary code.</p>
+          <p className="section-note">Step 4 is the only one that uses AI. Everything else is ordinary code.</p>
           <ol className="steps">
             <li>
               <span>

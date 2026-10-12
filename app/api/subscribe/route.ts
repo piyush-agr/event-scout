@@ -8,10 +8,15 @@ import type { Subscriber } from "@/lib/types";
 export async function POST(req: Request) {
   const parsed = SubscribeSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
-    return NextResponse.json(
-      { error: "Please enter your name, a valid email, and pick at least one category and one city." },
-      { status: 400 },
-    );
+    // Say exactly which field is wrong, so a typo is easy to spot.
+    const field = String(parsed.error?.issues[0]?.path[0] ?? "");
+    const messages: Record<string, string> = {
+      name: "Please enter your name.",
+      email: "That email address doesn't look complete. Check the ending (for example .com or .co).",
+      categories: "Pick at least one focus area (maximum 12).",
+      cities: "Pick at least one city (maximum 12).",
+    };
+    return NextResponse.json({ error: messages[field] ?? "Please check the form and try again." }, { status: 400 });
   }
   const { name, email, categories, cities } = parsed.data;
 
